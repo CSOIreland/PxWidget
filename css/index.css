@@ -1,0 +1,13 @@
+.pxwidget {
+    background-color: white;
+}
+
+.pxwidget img {
+    display: block;
+    margin: auto;
+    max-width: 60%;
+}
+
+.pxwidget p {
+    width: 100%;
+}
