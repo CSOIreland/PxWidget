@@ -57,7 +57,7 @@ pxWidget.draw.init = function (type, id, params, callback) {
 pxWidget.draw.spinner = function (id) {
   // Create spinner
   var spinner = pxWidget.jQuery('<img>', {
-    "src": C_PXWIDGET_ROOT + "image/spinner.gif",
+    "src": pxWidget.root + "image/spinner.gif",
     "title": "Widget Loading..."
   });
 
@@ -77,7 +77,7 @@ pxWidget.draw.error = function (id, message) {
   if (id && pxWidget.jQuery('#' + id).length) {
     // Create error
     var error = pxWidget.jQuery('<img>', {
-      "src": C_PXWIDGET_ROOT + "image/error.png",
+      "src": pxWidget.root + "image/error.png",
       "title": "Widget Error"
     });
 
@@ -111,7 +111,7 @@ pxWidget.draw.table = function (id) {
     pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.js', null, null, true);
 
     // pxWidget - Datatable - Bootstrap
-    pxWidget.load(window, document, 'link', C_PXWIDGET_ROOT + 'css/pxWidget.datatable.bootstrap.min.css');
+    pxWidget.load(window, document, 'link', pxWidget.root + 'css/pxWidget.datatable.bootstrap.min.css');
   }
   else {
     //load default datatables css

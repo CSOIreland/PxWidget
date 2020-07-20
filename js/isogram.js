@@ -1,7 +1,9 @@
 /*******************************************************************************
 PxWidget - ISOGRAM function
 *******************************************************************************/
-const C_PXWIDGET_ROOT = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget/';
+// Init
+var pxWidget = pxWidget || {};
+pxWidget.root = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget/';
 
 (function (i, s, o, g, r, a, m) {
     i[r] = i[r] || function () {
@@ -39,4 +41,4 @@ const C_PXWIDGET_ROOT = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget/';
         i['WidgetObject'] = r;
         i[r].load(i, s, o, g, r, a, m);
     }
-})(window, document, 'script', C_PXWIDGET_ROOT + 'js/index.min.js', 'pxWidget', true);
+})(window, document, 'script', pxWidget.root + 'js/index.min.js', 'pxWidget', true);

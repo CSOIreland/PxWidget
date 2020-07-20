@@ -28,7 +28,7 @@ pxWidget.chart.draw = function (id) {
 
     var footerElements = [];
     if (pxWidget.draw.params[id].copyright) {
-        footerElements.push('(C) ' + pxWidget.draw.params[id].metadata.api.response.extension.copyright.name);
+        footerElements.push('&copy; ' + pxWidget.draw.params[id].metadata.api.response.extension.copyright.name);
     }
 
     if (pxWidget.draw.params[id].link) {
@@ -84,6 +84,25 @@ pxWidget.chart.draw = function (id) {
     // Run ChartJS
 
     new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
+
+    // Clear labels/data before completion
+    pxWidget.draw.params[id].data.labels = [];
+    $.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+        value.data = [];
+    });
+
+    // Clear query/response based on autoupdate before completion
+    if (pxWidget.draw.params[id].autoupdate) {
+        pxWidget.draw.params[id].metadata.api.response = {};
+        $.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+            value.api.response = {};
+        });
+    } else {
+        pxWidget.draw.params[id].metadata.api.query = {};
+        $.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+            value.api.query = {};
+        });
+    }
 
     // Run optional callback at last
     if (pxWidget.draw.callback[id]) {
@@ -171,8 +190,6 @@ pxWidget.chart.compile = function (id) {
     //get xAxis labels
     var xAxisLabels = metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category();
 
-    //Empty any previous labels
-    pxWidget.draw.params[id].data.labels = [];
     if (!pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
         //all variables labels need to go in array
         pxWidget.jQuery.each(xAxisLabels, function (index, value) {
