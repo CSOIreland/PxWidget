@@ -87,19 +87,19 @@ pxWidget.chart.draw = function (id) {
 
     // Clear labels/data before completion
     pxWidget.draw.params[id].data.labels = [];
-    $.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+    pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
         value.data = [];
     });
 
     // Clear query/response based on autoupdate before completion
     if (pxWidget.draw.params[id].autoupdate) {
         pxWidget.draw.params[id].metadata.api.response = {};
-        $.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
             value.api.response = {};
         });
     } else {
         pxWidget.draw.params[id].metadata.api.query = {};
-        $.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
             value.api.query = {};
         });
     }

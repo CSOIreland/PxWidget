@@ -6,8 +6,8 @@ var pxWidget = pxWidget || {};
 pxWidget.root = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget/';
 
 (function (i, s, o, g, r, a, m) {
-    i[r] = i[r] || function () {
-        (i[r].queue = i[r].queue || []).push(arguments);
+    i[r].queue = i[r].queue || function () {
+        (i[r].widgets = i[r].widgets || []).push(arguments);
     };
     i[r].load = i[r].load || function (i, s, o, g, r, a, m) {
         e = s.createElement(o);
