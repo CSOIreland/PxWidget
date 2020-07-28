@@ -82,7 +82,6 @@ pxWidget.chart.draw = function (id) {
     };
 
     // Run ChartJS
-
     new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
 
     // Clear labels/data before completion

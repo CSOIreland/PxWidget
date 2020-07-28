@@ -41,9 +41,8 @@ pxWidget.draw.init = function (type, id, params, callback) {
       pxWidget.chart.draw(id);
       break;
     case C_PXWIDGET_TYPE_TABLE:
-    // Work in Progress
-    // pxWidget.draw.table(id);
-    // break;
+      pxWidget.table.draw(id);
+      break;
     default:
       pxWidget.draw.error(id, 'pxWidget.draw.init: invalid Type');
       break;
@@ -95,55 +94,3 @@ pxWidget.draw.error = function (id, message) {
   }
 };
 
-/**
- * Draw a pxWidget Table
- * @param {*} id
- */
-pxWidget.draw.table = function (id) {
-  // Load Bootstrap extensions for Datatable if Bootstrap is found
-  if (window.jQuery && window.jQuery.fn.modal) {
-    // Datatables - Bootstrap
-    pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css');
-    pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.js', null, null, true);
-
-    // Datatables - Extension - Responsive - Bootstrap
-    pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/responsive/2.2.3/css/responsive.bootstrap4.min.css');
-    pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.js', null, null, true);
-
-    // pxWidget - Datatable - Bootstrap
-    pxWidget.load(window, document, 'link', pxWidget.root + 'css/pxWidget.datatable.bootstrap.min.css');
-  }
-  else {
-    //load default datatables css
-    pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css');
-  }
-
-  if (id && pxWidget.jQuery('#' + id).length) {
-    // Init & Spinner
-    pxWidget.draw.spinner(id);
-
-    // Create table
-    var table = pxWidget.jQuery('#table-template').html();
-
-    // Create footer
-    var footer = pxWidget.jQuery('<p>', {
-      "html": pxWidget.jQuery('<a>', {
-        "text": "https://data.cso.ie/table/CMP01",
-        //"text": pxWidget.params[id].link,
-        "href": "https://data.cso.ie/table/CMP01",
-        //"href": pxWidget.params[id].link,
-        "target": "_blank"
-      }).get(0).outerHTML + " &copy; CSO.ie"
-      //}).get(0).outerHTML + " &copy; " + pxWidget.params[id].copyright
-    }).css({ "text-align": "right" });
-
-    // Append table
-    pxWidget.jQuery('#' + id).append(table);
-    // Draw Datatable
-    pxWidget.jQuery('#' + id).find('table').DataTable();
-    // Append footer
-    pxWidget.jQuery('#' + id).append(footer);
-  } else {
-    pxWidget.draw.error();
-  }
-};

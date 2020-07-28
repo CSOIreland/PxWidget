@@ -5,7 +5,7 @@ PxWidget - No Conflict
 var pxWidget = pxWidget || {};
 
 // Native noConflict objects
-pxWidget.jQuery = pxWidget.$ = pxWidget.jQuery || jQuery.noConflict();
+pxWidget.jQuery = pxWidget.$ = pxWidget.jQuery || jQuery.noConflict(true);
 
 // Non-Native noConflict objects
 pxWidget.jQuery.each(pxWidget.noConflict, function (key, obj) {

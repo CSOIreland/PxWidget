@@ -256,3 +256,42 @@ pxWidget.ajax.jsonrpc.request = function (pAPI_URL, pAPI_Method, pAPI_Params, ca
     return false;
   }
 };
+
+//Format number
+pxWidget.formatNumber = function (number, precision) {
+
+  decimalSeparator = pxWidget.decimalSeparator();
+  thousandSeparator = pxWidget.thousandSeparator();
+
+  precision = precision !== undefined ? precision : undefined;
+
+  if ("number" !== typeof number && "string" !== typeof number)
+    return number;
+
+  floatNumber = parseFloat(number);
+  if (isNaN(floatNumber))
+    //output any non number as html
+    return "string" === typeof number ? number.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") : number;
+
+  if (precision !== undefined) {
+    floatNumber = floatNumber.toFixed(precision);
+  }
+  else {
+    floatNumber = floatNumber.toString();
+  }
+
+  var parts = floatNumber.split(".");
+  var wholeNumber = parts[0].toString();
+  var decimalNumber = parts[1] !== undefined ? parts[1].toString() : undefined;
+  return (thousandSeparator ? wholeNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator) : wholeNumber) + (decimalNumber !== undefined ? decimalSeparator + decimalNumber : "");
+};
+
+pxWidget.decimalSeparator = function () {
+  var n = 1.1;
+  return n.toLocaleString().substring(1, 2);
+}
+
+pxWidget.thousandSeparator = function () {
+  var n = 1000;
+  return n.toLocaleString().substring(1, 2);
+}
