@@ -88,7 +88,7 @@ pxWidget.draw.error = function (id, message) {
     // Append Error and Footer
     pxWidget.jQuery('#' + id).empty().append(error).append(footer);
     if (message)
-      console.log(message);
+      console.log('#' + id + ' >> ' + message);
   } else {
     console.log('pxWidget.draw.error: invalid ID');
   }

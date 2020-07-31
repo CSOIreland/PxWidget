@@ -38,15 +38,15 @@ pxWidget.noConflict.JSONstat = window.JSONstat ? window.JSONstat : null;
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/badosa/JSON-stat@v0.13.3/json-stat.min.js');
 
 // pxWidget CSS
-pxWidget.load(window, document, 'link', pxWidget.root + 'css/index.css');
+pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/index.css' : 'css/index.min.css'));
 
 // pxWidget JS
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/noconflict.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/constant.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/config.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/plugin.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/library.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/chart.library.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/table.library.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/draw.library.js');
-pxWidget.load(window, document, 'script', pxWidget.root + 'js/draw.js');
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/noconflict.js' : 'js/noconflict.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/constant.js' : 'js/constant.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/config.js' : 'js/config.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/plugin.js' : 'js/plugin.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/library.js' : 'js/library.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/chart.library.js' : 'js/chart.library.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/table.library.js' : 'js/table.library.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/draw.library.js' : 'js/draw.library.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/draw.js' : 'js/draw.min.js'));

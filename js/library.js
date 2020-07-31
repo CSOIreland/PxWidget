@@ -33,7 +33,7 @@ pxWidget.spinner.stop = function (id) {
 
   if (!pxWidget.spinner[id]) {
     // Stop the spinner immediatelly
-    // No fadeOut to aovid staking the pxWidget rendered below
+    // No fadeOut to aovid stacking the pxWidget rendered below
     pxWidget.jQuery('#' + id).find('img').hide();
   }
 };

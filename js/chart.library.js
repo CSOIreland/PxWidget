@@ -112,6 +112,24 @@ pxWidget.chart.draw = function (id) {
 pxWidget.chart.ajax.readDataset = function (id) {
     var args = [];
 
+    // Check metadata query exists
+    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.query)) {
+        pxWidget.draw.error(id, 'pxWidget.chart.ajax.readDataset: missing metadata query');
+        return;
+    }
+    // Check all data queries exist
+    var allDataQueriesExist = true;
+    pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
+        if (pxWidget.jQuery.isEmptyObject(value.api.query)) {
+            allDataQueriesExist = false;
+            pxWidget.draw.error(id, 'pxWidget.chart.ajax.readDataset: missing data query [' + (index + 1) + ']');
+            return false;
+        }
+    });
+
+    if (!allDataQueriesExist)
+        return;
+
     // Read meta-data
     args.push(pxWidget.ajax.jsonrpc.request(
         pxWidget.draw.params[id].metadata.api.query.url,
@@ -158,18 +176,18 @@ pxWidget.chart.ajax.readDataset = function (id) {
             if (hasCompiled) {
                 // Restart the drawing after successful compilation
                 pxWidget.chart.draw(id);
-            }
-
+            } else
+                pxWidget.draw.error(id, 'pxWidget.chart.ajax.readDataset: missing data response(s)');
         });
     }
 };
 
-pxWidget.chart.callback.readMetadata = function (result, callbackParams) {
-    pxWidget.draw.params[callbackParams.id].metadata.api.response = result;
+pxWidget.chart.callback.readMetadata = function (response, callbackParams) {
+    pxWidget.draw.params[callbackParams.id].metadata.api.response = response;
 };
 
-pxWidget.chart.callback.readDataset = function (result, callbackParams) {
-    pxWidget.draw.params[callbackParams.id].data.datasets[callbackParams.index].api.response = result;
+pxWidget.chart.callback.readDataset = function (response, callbackParams) {
+    pxWidget.draw.params[callbackParams.id].data.datasets[callbackParams.index].api.response = response;
 };
 
 pxWidget.chart.compile = function (id) {
@@ -180,56 +198,56 @@ pxWidget.chart.compile = function (id) {
     }
 
     //parse JSONstat meta data
-    var metadataData = new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) || pxWidget.draw.params[id].metadata.api.response;
-    if (!metadataData.length) {
+    var metadataData = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
+    if (metadataData && metadataData.length) {
+        //get xAxis labels
+        var xAxisLabels = metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category();
+
+        if (!pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
+            //all variables labels need to go in array
+            pxWidget.jQuery.each(xAxisLabels, function (index, value) {
+                pxWidget.draw.params[id].data.labels.push(value.label);
+            });
+        }
+        else {
+            var xAxisCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]];
+            pxWidget.jQuery.each(xAxisCodes, function (index, value) {
+                pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category(value).label);
+            });
+        }
+        //get datasets data
+        var isValidData = true;
+        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
+            var data = value.api.response ? new pxWidget.JSONstat.jsonstat(value.api.response) : null;
+            if (data && data.length) {
+                var xAxisDimensionCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length
+                    ? pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]
+                    : data.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).id;
+
+                //loop through xAxis dimension to get values
+                pxWidget.jQuery.each(xAxisDimensionCodes, function (variableIndex, variableValue) {
+                    var valueObj = {
+                        [Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]: variableValue
+                    };
+
+                    pxWidget.jQuery.each(data.Dimension(), function (dimensionIndex, dimensionValue) {
+                        if (data.id[dimensionIndex] != Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]) {
+                            valueObj[data.id[dimensionIndex]] = dimensionValue.id[0]
+                        }
+
+                    });
+
+                    value.data.push(data.Data(valueObj).value)
+                });
+            } else {
+                pxWidget.draw.error(id, 'pxWidget.chart.compile: invalid data response [' + (index + 1) + ']');
+                isValidData = false;
+                return false;
+            }
+        });
+        return isValidData;
+    } else {
         pxWidget.draw.error(id, 'pxWidget.chart.compile: invalid meta-data response');
         return false;
     }
-
-    //get xAxis labels
-    var xAxisLabels = metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category();
-
-    if (!pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
-        //all variables labels need to go in array
-        pxWidget.jQuery.each(xAxisLabels, function (index, value) {
-            pxWidget.draw.params[id].data.labels.push(value.label);
-        });
-    }
-    else {
-        var xAxisCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]];
-        pxWidget.jQuery.each(xAxisCodes, function (index, value) {
-            pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category(value).label);
-        });
-    }
-    //get datasets data
-    var isValidData = true;
-    pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
-        var data = new pxWidget.JSONstat.jsonstat(value.api.response) || value.api.response;
-        if (!data.length) {
-            pxWidget.draw.error(id, 'pxWidget.chart.compile: invalid data response [' + (index + 1) + ']');
-            isValidData = false;
-            return false;
-        }
-
-        var xAxisDimensionCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length
-            ? pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]
-            : data.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).id;
-
-        //loop through xAxis dimension to get values
-        pxWidget.jQuery.each(xAxisDimensionCodes, function (variableIndex, variableValue) {
-            var valueObj = {
-                [Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]: variableValue
-            };
-
-            pxWidget.jQuery.each(data.Dimension(), function (dimensionIndex, dimensionValue) {
-                if (data.id[dimensionIndex] != Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]) {
-                    valueObj[data.id[dimensionIndex]] = dimensionValue.id[0]
-                }
-
-            });
-
-            value.data.push(data.Data(valueObj).value)
-        });
-    });
-    return isValidData;
 }

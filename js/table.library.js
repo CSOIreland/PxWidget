@@ -5,12 +5,15 @@ PxWidget - Chart - Library
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.table = {};
-pxWidget.table.pivot = {};
-pxWidget.table.dimensionCode = null;
-pxWidget.table.variableCodes = [];
 pxWidget.table.ajax = {};
 pxWidget.table.callback = {};
 pxWidget.table.isCSSloaded = false;
+pxWidget.table.response = null;
+pxWidget.table.jsonStat = null;
+
+pxWidget.table.pivot = {};
+pxWidget.table.pivot.dimensionCode = [];
+pxWidget.table.pivot.variableCodes = [];
 
 /**
  * Draw a pxWidget Table
@@ -32,76 +35,34 @@ pxWidget.table.draw = function (id) {
         //cannot use redraw as columns are dynamically created depending on the matrix. Have to destroy and re-initiate
     }
 
+    // Parse JSON-stat
     var data = new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.api.response);
+
     // Parse data-id to array-of-object
     var jsonTable = data.toTable({
         type: 'arrobj',
         meta: true,
         unit: true,
-        content: "label"
+        content: "id"
     });
 
-    var pivotVariableCodes = [];
+    // Pivot table on demand
+    jsonTable = pxWidget.table.pivot.compute(id, jsonTable);
 
-    if (pxWidget.draw.params[id].pivot) {
+    // Set the Bootstrap table for Datatable if Bootstrap is found
+    if (window.jQuery && window.jQuery.fn.modal)
+        var table = pxWidget.jQuery('<table>', { "class": "table table-striped hover" });
+    else
+        var table = pxWidget.jQuery('<table>', { "class": "display", "style": "width: 100%" });
 
-        var reducedTable = pxWidget.jQuery.extend(true, {}, jsonTable);
-        var pivotedTable = pxWidget.jQuery.extend(true, {}, jsonTable);
-
-        pxWidget.jQuery.each(jsonTable.data, function (indexData, rowData) {
-            // Get all values to pivot
-            if (pxWidget.jQuery.inArray(rowData[pxWidget.draw.params[id].pivot], pivotVariableCodes) == -1) {
-                pivotVariableCodes.push(rowData[pxWidget.draw.params[id].pivot]);
-            }
-
-            // Reduce the data by the pivot size
-            if (rowData[pxWidget.draw.params[id].pivot] != pivotVariableCodes[0]) {
-                reducedTable.data.splice(indexData, 1);
-                pivotedTable.data.splice(indexData, 1);
-            }
-        });
-
-        pxWidget.jQuery.each(jsonTable.data, function (indexData, rowData) {
-            pxWidget.jQuery.each(reducedTable.data, function (indexReduced, rowReduced) {
-                var match = true;
-
-                // Match the reduced data against the data
-                pxWidget.jQuery.each(rowReduced, function (key, value) {
-                    if (pxWidget.jQuery.inArray(key, [pxWidget.draw.params[id].pivot, 'unit', 'value']) == -1 && rowData[key] != value) {
-                        match = false;
-                        return false;
-                    }
-                });
-
-                if (match) {
-                    // remove pivoted value
-                    delete pivotedTable.data[indexReduced]['value'];
-
-                    // append pivoted column 
-                    var pivotedColumn = rowData[pxWidget.draw.params[id].pivot]
-                    pivotedTable.data[indexReduced][pivotedColumn] = rowData.value;
-                    return false;
-                }
-            });
-        });
-
-        // remove pivoted rows and re-arrange array
-        jsonTable.data = [];
-        pxWidget.jQuery.each(pivotedTable.data, function (indexPivoted, rowPivoted) {
-            if (!rowPivoted.hasOwnProperty('value'))
-                jsonTable.data.push(rowPivoted);
-        });
-    }
-
-    var table = pxWidget.jQuery('<table>', { "class": "table table-striped hover" })
-        .append(pxWidget.jQuery('<caption>', { "text": pxWidget.draw.params[id].title ? pxWidget.draw.params[id].data.api.response.label.trim() : "" }))
-        .append(pxWidget.jQuery('<thead>').append(pxWidget.jQuery('<tr>', { "name": "header-row" })))
-        .append(pxWidget.jQuery('<tbody>'));
+    table.append(pxWidget.jQuery('<caption>', { "text": pxWidget.draw.params[id].title ? pxWidget.draw.params[id].data.api.response.label.trim() : "" }));
+    table.append(pxWidget.jQuery('<thead>').append(pxWidget.jQuery('<tr>', { "name": "header-row" })));
+    table.append(pxWidget.jQuery('<tbody>'));
 
     pxWidget.jQuery('#' + id).append(table);
 
+    // Reset and Populate columns with Dimensions
     var tableColumns = [];
-    // Populate columns with Dimensions
     pxWidget.jQuery.each(data.id, function (i, v) {
         // Draw heading
         var tableHeading = pxWidget.jQuery("<th>", {
@@ -114,21 +75,7 @@ pxWidget.table.draw = function (id) {
         tableColumns.push({
             data: data.id[i],
             "visible": data.id[i] == pxWidget.draw.params[id].pivot ? false : true,
-            "searchable": data.id[i] == pxWidget.draw.params[id].pivot ? false : true,
-            render: function (cell, type, row, meta) {
-                //alternative to using "createdCell" and data-order attribute which does not work with render
-                //depending on request type, return either the code to sort if the time column, or the label for any other column
-                //https://stackoverflow.com/questions/51719676/datatables-adding-data-order
-                switch (type) {
-                    case "sort":
-                        return cell;
-                        break;
-
-                    default:
-                        return cell;
-                        break;
-                }
-            }
+            "searchable": data.id[i] == pxWidget.draw.params[id].pivot ? false : true
         });
     });
 
@@ -146,8 +93,8 @@ pxWidget.table.draw = function (id) {
     });
 
     // Populate Pivoted columns
-    if (pivotVariableCodes.length) {
-        pxWidget.jQuery.each(pivotVariableCodes, function (index, value) {
+    if (pxWidget.table.pivot.variableCodes[id].length) {
+        pxWidget.jQuery.each(pxWidget.table.pivot.variableCodes[id], function (index, value) {
             tableColumns.push({
                 "data": value,
                 "type": "data",
@@ -218,6 +165,70 @@ pxWidget.table.draw = function (id) {
     }
 };
 
+/**
+ * Pivot a dataset by a Classification or Time code 
+ * @param {*} id 
+ * @param {*} arrobjTable 
+ */
+pxWidget.table.pivot.compute = function (id, arrobjTable) {
+    // Init
+    pxWidget.table.pivot.variableCodes[id] = [];
+    // Check if Pivoting is required
+    if (!pxWidget.draw.params[id].pivot) {
+        return arrobjTable;
+    } else {
+        pxWidget.table.pivot.dimensionCode[id] = pxWidget.draw.params[id].pivot;
+    }
+
+    var reducedTable = pxWidget.jQuery.extend(true, {}, arrobjTable);
+    var pivotedTable = pxWidget.jQuery.extend(true, {}, arrobjTable);
+
+    pxWidget.jQuery.each(arrobjTable.data, function (indexData, rowData) {
+        // Get all values to pivot
+        if (pxWidget.jQuery.inArray(rowData[pxWidget.table.pivot.dimensionCode[id]], pxWidget.table.pivot.variableCodes[id]) == -1) {
+            pxWidget.table.pivot.variableCodes[id].push(rowData[pxWidget.table.pivot.dimensionCode[id]]);
+        }
+
+        // Reduce the data by the pivot size
+        if (rowData[pxWidget.table.pivot.dimensionCode[id]] != pxWidget.table.pivot.variableCodes[id][0]) {
+            reducedTable.data.splice(indexData, 1);
+            pivotedTable.data.splice(indexData, 1);
+        }
+    });
+
+    pxWidget.jQuery.each(arrobjTable.data, function (indexData, rowData) {
+        pxWidget.jQuery.each(reducedTable.data, function (indexReduced, rowReduced) {
+            var match = true;
+
+            // Match the reduced data against the data
+            pxWidget.jQuery.each(rowReduced, function (key, value) {
+                if (pxWidget.jQuery.inArray(key, [pxWidget.table.pivot.dimensionCode[id], 'unit', 'value']) == -1 && rowData[key] != value) {
+                    match = false;
+                    return false;
+                }
+            });
+
+            if (match) {
+                // remove pivoted value
+                delete pivotedTable.data[indexReduced]['value'];
+
+                // append pivoted column 
+                var pivotedColumn = rowData[pxWidget.table.pivot.dimensionCode[id]]
+                pivotedTable.data[indexReduced][pivotedColumn] = rowData.value;
+                return false;
+            }
+        });
+    });
+
+    // remove pivoted rows and re-arrange array
+    arrobjTable.data = [];
+    pxWidget.jQuery.each(pivotedTable.data, function (indexPivoted, rowPivoted) {
+        if (!rowPivoted.hasOwnProperty('value'))
+            arrobjTable.data.push(rowPivoted);
+    });
+
+    return arrobjTable;
+}
 
 pxWidget.table.compile = function (id) {
     if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].data.api.response)) {
@@ -227,18 +238,24 @@ pxWidget.table.compile = function (id) {
     }
 
     //get datasets data
-    var isValidData = true;
-    var data = new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.api.response) || pxWidget.draw.params[id].data.api.response;
-    if (!data.length) {
-        pxWidget.draw.error(id, 'pxWidget.table.compile: invalid data response [' + (index + 1) + ']');
-        isValidData = false;
+    pxWidget.table.response = pxWidget.draw.params[id].data.api.response;
+    pxWidget.table.jsonStat = pxWidget.table.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.api.response) : null;
+
+    if (pxWidget.table.jsonStat && pxWidget.table.jsonStat.length)
+        return true;
+    else {
+        pxWidget.draw.error(id, 'pxWidget.table.compile: invalid data response');
         return false;
     }
-
-    return isValidData;
 }
 
 pxWidget.table.ajax.readDataset = function (id) {
+
+    // Check data query exists
+    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].data.api.query)) {
+        pxWidget.draw.error(id, 'pxWidget.table.ajax.readDataset: missing data query');
+        return;
+    }
 
     pxWidget.ajax.jsonrpc.request(
         pxWidget.draw.params[id].data.api.query.url,
@@ -252,15 +269,11 @@ pxWidget.table.ajax.readDataset = function (id) {
         id)
 };
 
-pxWidget.table.callback.readDataset = function (result, id) {
-    pxWidget.draw.params[id].data.api.response = result;
-
-    var hasCompiled = true;
-    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].data.api.response)) {
-        return hasCompiled = false;
-    }
-
-    if (hasCompiled) {
+pxWidget.table.callback.readDataset = function (response, id) {
+    if (pxWidget.jQuery.isEmptyObject(response)) {
+        pxWidget.draw.error(id, 'pxWidget.table.callback.readDataset: missing data response');
+    } else {
+        pxWidget.draw.params[id].data.api.response = response;
         // Restart the drawing after successful compilation
         pxWidget.table.draw(id);
     }
@@ -289,7 +302,7 @@ pxWidget.table.loadCSS = function (id) {
         pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.js', null, null, true);
 
         // pxWidget - Datatable - Bootstrap
-        pxWidget.load(window, document, 'link', pxWidget.root + 'css/pxWidget.datatable.bootstrap.min.css');
+        pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/datatable.bootstrap.min.css' : 'css/datatable.bootstrap.css'));
     }
     else {
         // Default datatables 
