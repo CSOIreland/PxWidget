@@ -24,6 +24,11 @@ pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive
 pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/plug-ins/1.10.20/sorting/datetime-moment.js');
 // Datatables - Sorting - Natural -->
 pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/plug-ins/1.10.20/sorting/natural.js');
+// Datatables - Exporting -->
+pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.flash.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.html5.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.print.min.js');
 
 // ChartJS - https://github.com/chartjs/Chart.js/
 pxWidget.noConflict.Chart = window.Chart ? window.Chart : null;

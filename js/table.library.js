@@ -43,7 +43,7 @@ pxWidget.table.draw = function (id) {
         type: 'arrobj',
         meta: true,
         unit: true,
-        content: "id"
+        content: "label"
     });
 
     // Pivot table on demand
@@ -104,10 +104,9 @@ pxWidget.table.draw = function (id) {
                     return pxWidget.formatNumber(cell, row.unit.decimals);
                 }
             });
-
             var pivotHeading = pxWidget.jQuery("<th>",
                 {
-                    "html": data.Dimension(pxWidget.draw.params[id].pivot).Category(value).label,
+                    "html": value,
                     "class": "text-right text-light bg-primary"
                 });
             pxWidget.jQuery('#' + id + " table").find("[name=header-row]").append(pivotHeading);
@@ -142,7 +141,10 @@ pxWidget.table.draw = function (id) {
     });
 
     var footerElements = [];
-    footerElements.push(data.updated);
+    if (data.updated) {
+        footerElements.push(data.updated);
+    }
+
     if (pxWidget.draw.params[id].copyright) {
         footerElements.push('&copy; ' + data.extension.copyright.name);
     }

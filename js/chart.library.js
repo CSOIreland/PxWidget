@@ -20,8 +20,11 @@ pxWidget.chart.draw = function (id) {
         return;
     }
 
-    // Create canvas
-    var canvas = pxWidget.jQuery('<canvas>');
+    // Create canvas in parent div
+    var canvas = pxWidget.jQuery('<div>', {
+        "html": pxWidget.jQuery('<canvas>')
+    });
+
     // Append canvas
     pxWidget.jQuery('#' + id).append(canvas);
 
@@ -49,7 +52,7 @@ pxWidget.chart.draw = function (id) {
     }
 
     // Store the Copyright and updated date into options to access within Chart
-    pxWidget.draw.params[id].options.updated = pxWidget.draw.params[id].metadata.api.response.updated;
+    pxWidget.draw.params[id].options.updated = pxWidget.draw.params[id].metadata.api.response.updated || "";
 
     pxWidget.draw.params[id].plugins = pxWidget.draw.params[id].plugins || [];
     pxWidget.draw.params[id].plugins.push({
@@ -79,6 +82,58 @@ pxWidget.chart.draw = function (id) {
         right: 0,
         top: 0,
         bottom: 22
+    };
+
+    if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
+        //format yaxis labels
+        $.each(pxWidget.draw.params[id].options.scales.yAxes, function (index, value) {
+            value.ticks.callback = function (label, index, labels) {
+                switch (pxWidget.draw.params[id].type) {
+                    case "horizontalBar":
+                        return label;
+                        break;
+                    default:
+                        return pxWidget.formatNumber(label, 0);
+                        break;
+                }
+            }
+        });
+
+        //format xaxis labels if dimension is not time
+        $.each(pxWidget.draw.params[id].options.scales.xAxes, function (index, value) {
+
+            value.ticks.callback = function (label, index, labels) {
+                if (pxWidget.draw.params[id].metadata.xAxis.role != "time") {
+                    return pxWidget.formatNumber(label, 0);
+                }
+                else {
+                    return label;
+                }
+            }
+
+
+        });
+    }
+
+
+
+    //format tooltip value
+    pxWidget.draw.params[id].options.tooltips.callbacks.label = function (tooltipItem, data) {
+        var label = "";
+        var meta = Object.values(data.datasets[0]._meta);
+        switch (meta[0].type) {
+            case "pie":
+            case "doughnut":
+                label = " " + data.labels[tooltipItem.index]
+                break;
+            default:
+                label = " " + data.datasets[tooltipItem.datasetIndex].label || '';
+                break;
+        }
+        label += ': ';
+        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : pxWidget.formatNumber(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]);
+        label += value;
+        return label;
     };
 
     // Run ChartJS
