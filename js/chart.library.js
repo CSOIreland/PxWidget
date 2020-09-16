@@ -86,7 +86,7 @@ pxWidget.chart.draw = function (id) {
 
     if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
         //format yaxis labels
-        $.each(pxWidget.draw.params[id].options.scales.yAxes, function (index, value) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (index, value) {
             value.ticks.callback = function (label, index, labels) {
                 switch (pxWidget.draw.params[id].type) {
                     case "horizontalBar":
@@ -100,7 +100,7 @@ pxWidget.chart.draw = function (id) {
         });
 
         //format xaxis labels if dimension is not time
-        $.each(pxWidget.draw.params[id].options.scales.xAxes, function (index, value) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.xAxes, function (index, value) {
 
             value.ticks.callback = function (label, index, labels) {
                 if (pxWidget.draw.params[id].metadata.xAxis.role != "time") {
