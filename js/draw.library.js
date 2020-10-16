@@ -35,13 +35,19 @@ pxWidget.draw.init = function (type, id, params, callback) {
 
   // Store callback in namespace
   pxWidget.draw.callback[id] = callback;
-
+  //add specific class here to div with the id we have 
   switch (type) {
     case C_PXWIDGET_TYPE_CHART:
+      pxWidget.jQuery('#' + id).addClass("chart");
       pxWidget.chart.draw(id);
       break;
     case C_PXWIDGET_TYPE_TABLE:
+      pxWidget.jQuery('#' + id).addClass("table");
       pxWidget.table.draw(id);
+      break;
+    case C_PXWIDGET_TYPE_MAP:
+      pxWidget.jQuery('#' + id).addClass("map");
+      pxWidget.map.draw(id);
       break;
     default:
       pxWidget.draw.error(id, 'pxWidget.draw.init: invalid Type');

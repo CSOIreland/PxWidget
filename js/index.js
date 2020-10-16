@@ -34,9 +34,17 @@ pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.
 pxWidget.noConflict.Chart = window.Chart ? window.Chart : null;
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/chartjs/Chart.js@v2.9.3/dist/Chart.min.js');
 // ChartJS stacking percentage - https://github.com/y-takey/chartjs-plugin-stacked100
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/y-takey/chartjs-plugin-stacked100/src/index.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/y-takey/chartjs-plugin-stacked100@v0.7.1/src/index.min.js');
 // ChartJS chartjs-plugin-colorschemes - https://github.com/nagix/chartjs-plugin-colorschemes
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/nagix/chartjs-plugin-colorschemes@v0.4.0/dist/chartjs-plugin-colorschemes.min.js');
+
+// ChartGeo module for charting maps with legends - https://github.com/sgratzl/chartjs-chart-geo
+pxWidget.noConflict.ChartGeo = window.ChartGeo ? window.ChartGeo : null;
+pxWidget.load(window, document, 'script', 'https://unpkg.com/chartjs-chart-geo@2.1.0/build/Chart.Geo.min.js');
+
+// Convert GeoJSON to TopoJSON - https://github.com/shancarter/distillery
+pxWidget.noConflict.topojson = window.topojson ? window.topojson : null;
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/topojson.js' : 'js/topojson.min.js'));
 
 // JSON-Stat - https://github.com/badosa/JSON-stat/
 pxWidget.noConflict.JSONstat = window.JSONstat ? window.JSONstat : null;
@@ -53,5 +61,6 @@ pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/library.js' : 'js/library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/chart.library.js' : 'js/chart.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/table.library.js' : 'js/table.library.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/map.library.js' : 'js/map.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/draw.library.js' : 'js/draw.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/draw.js' : 'js/draw.min.js'));

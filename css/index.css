@@ -5,6 +5,9 @@
 
 .pxwidget canvas {
     width: 100%;
+}
+
+.pxwidget .chart canvas {
     height: 70vh;
 }
 
@@ -26,26 +29,34 @@
     clear: both;
 }
 
-/* Small devices (tablets, 768px and up) */
+/* Small devices (landscape phones, 576px and up)*/
 
-@media (min-width: 768px) {
-    .pxwidget canvas {
+@media (min-width: 576px) {
+    .pxwidget .chart canvas {
         height: 80vh;
     }
 }
 
-/* Medium devices (desktops, 992px and up) */
+/* Medium devices (tablets, 768px and up) */
+
+@media (min-width: 768px) {
+    .pxwidget .chart canvas {
+        height: 80vh;
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
 
 @media (min-width: 992px) {
-    .pxwidget canvas {
+    .pxwidget .chart canvas {
         height: 60vh;
     }
 }
 
-/* Large devices (large desktops, 1200px and up) */
+/* Extra Large devices (large desktops, 1200px and up) */
 
 @media (min-width: 1200px) {
-    .pxwidget canvas {
+    .pxwidget .chart canvas {
         height: 70vh;
     }
 }

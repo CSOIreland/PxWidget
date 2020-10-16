@@ -145,19 +145,6 @@ pxWidget.chart.draw = function (id) {
         value.data = [];
     });
 
-    // Clear query/response based on autoupdate before completion
-    if (pxWidget.draw.params[id].autoupdate) {
-        pxWidget.draw.params[id].metadata.api.response = {};
-        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
-            value.api.response = {};
-        });
-    } else {
-        pxWidget.draw.params[id].metadata.api.query = {};
-        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
-            value.api.query = {};
-        });
-    }
-
     // Run optional callback at last
     if (pxWidget.draw.callback[id]) {
         pxWidget.draw.callback[id]();
