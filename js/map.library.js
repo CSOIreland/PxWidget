@@ -7,6 +7,9 @@ pxWidget.map = {};
 pxWidget.map.ajax = {};
 pxWidget.map.callback = {};
 
+pxWidget.map.geojson = {};
+pxWidget.map.geojson.topology = 'Topology';
+pxWidget.map.geojson.featureCollection = 'FeatureCollection';
 
 /**
  * Draw a pxWidget Chart
@@ -211,7 +214,7 @@ pxWidget.map.compileDataset = function (id, response, data) {
     var mapData = [];
     //  var data = [];
     switch (response.type) {
-        case C_PXWIDGET_GEOJSON_TOPOLOGY:
+        case pxWidget.map.geojson.topology:
             topology = response;
             var dataCodes = data.Dimension({ role: "geo" })[0].id;
             var regions = pxWidget.ChartGeo.topojson.feature(topology, topology.objects[Object.keys(topology.objects)[0]]).features;
@@ -242,7 +245,7 @@ pxWidget.map.compileDataset = function (id, response, data) {
             });
 
             break;
-        case C_PXWIDGET_GEOJSON_FEATURE_COLLECTION:
+        case pxWidget.map.geojson.featureCollection:
             featureCollection = response;
             var options = { "quantization": 1e4 }
             // Convert and merge GeoJSON features into a TopoJSON topology.

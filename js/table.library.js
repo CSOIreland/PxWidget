@@ -51,7 +51,7 @@ pxWidget.table.draw = function (id) {
 
     // Set the Bootstrap table for Datatable if Bootstrap is found
     if (window.jQuery && window.jQuery.fn.modal)
-        var table = pxWidget.jQuery('<table>', { "class": "table table-striped hover" });
+        var table = pxWidget.jQuery('<table>', { "class": "table table-striped hover w-100" });
     else
         var table = pxWidget.jQuery('<table>', { "class": "display", "style": "width: 100%" });
 
@@ -184,7 +184,7 @@ pxWidget.table.pivot.compute = function (id, arrobjTable) {
 
     var reducedTable = pxWidget.jQuery.extend(true, {}, arrobjTable);
     var pivotedTable = pxWidget.jQuery.extend(true, {}, arrobjTable);
-
+    var spliceOffset = 0;
     pxWidget.jQuery.each(arrobjTable.data, function (indexData, rowData) {
         // Get all values to pivot
         if (pxWidget.jQuery.inArray(rowData[pxWidget.table.pivot.dimensionCode[id]], pxWidget.table.pivot.variableCodes[id]) == -1) {
@@ -193,8 +193,9 @@ pxWidget.table.pivot.compute = function (id, arrobjTable) {
 
         // Reduce the data by the pivot size
         if (rowData[pxWidget.table.pivot.dimensionCode[id]] != pxWidget.table.pivot.variableCodes[id][0]) {
-            reducedTable.data.splice(indexData, 1);
-            pivotedTable.data.splice(indexData, 1);
+            reducedTable.data.splice(indexData - spliceOffset, 1);
+            pivotedTable.data.splice(indexData - spliceOffset, 1);
+            spliceOffset++;
         }
     });
 
@@ -297,17 +298,18 @@ pxWidget.table.loadCSS = function (id) {
     if (window.jQuery && window.jQuery.fn.modal) {
         // Datatables - Bootstrap
         pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css');
-        pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.js', null, null, true);
+        pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js', null, null, true);
 
         // Datatables - Extension - Responsive - Bootstrap
         pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/responsive/2.2.3/css/responsive.bootstrap4.min.css');
-        pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.js', null, null, true);
+        pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.min.js', null, null, true);
 
         // pxWidget - Datatable - Bootstrap
         pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/datatable.bootstrap.min.css' : 'css/datatable.bootstrap.css'));
     }
     else {
-        // Default datatables 
+        // Default css and responsive css for datatables 
         pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css');
+        pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css');
     }
 };

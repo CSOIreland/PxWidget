@@ -22,6 +22,7 @@ pxWidget.chart.draw = function (id) {
 
     // Create canvas in parent div
     var canvas = pxWidget.jQuery('<div>', {
+        "class": "pxwidget-canvas-wrapper",
         "html": pxWidget.jQuery('<canvas>')
     });
 

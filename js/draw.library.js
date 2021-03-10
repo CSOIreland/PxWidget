@@ -7,6 +7,11 @@ pxWidget.draw = {};
 pxWidget.draw.params = {};
 pxWidget.draw.callback = {};
 
+pxWidget.draw.type = {};
+pxWidget.draw.type.chart = 'chart';
+pxWidget.draw.type.table = 'table';
+pxWidget.draw.type.map = 'map';
+
 /**
  * Initilise pxWidget
  * @param {*} type 
@@ -37,15 +42,15 @@ pxWidget.draw.init = function (type, id, params, callback) {
   pxWidget.draw.callback[id] = callback;
   //add specific class here to div with the id we have 
   switch (type) {
-    case C_PXWIDGET_TYPE_CHART:
+    case pxWidget.draw.type.chart:
       pxWidget.jQuery('#' + id).addClass("chart");
       pxWidget.chart.draw(id);
       break;
-    case C_PXWIDGET_TYPE_TABLE:
+    case pxWidget.draw.type.table:
       pxWidget.jQuery('#' + id).addClass("table");
       pxWidget.table.draw(id);
       break;
-    case C_PXWIDGET_TYPE_MAP:
+    case pxWidget.draw.type.map:
       pxWidget.jQuery('#' + id).addClass("map");
       pxWidget.map.draw(id);
       break;
