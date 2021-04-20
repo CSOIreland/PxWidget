@@ -5,6 +5,7 @@ PxWidget - Chart - Library
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.table = {};
+pxWidget.table.defaultContent = "";
 pxWidget.table.ajax = {};
 pxWidget.table.callback = {};
 pxWidget.table.isCSSloaded = false;
@@ -20,6 +21,9 @@ pxWidget.table.pivot.variableCodes = [];
  * @param {*} id 
  */
 pxWidget.table.draw = function (id) {
+    // Store it for the data sort plugin
+    // This implies that every widget is sharing the same defaultContent
+    pxWidget.table.defaultContent = pxWidget.draw.params[id].defaultContent;
 
     // Init & Spinner
     pxWidget.draw.spinner(id);
@@ -308,7 +312,7 @@ pxWidget.table.loadCSS = function (id) {
         pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/datatable.bootstrap.min.css' : 'css/datatable.bootstrap.css'));
     }
     else {
-        // Default css and responsive css for datatables 
+        // Default css and responsive cc for datatables 
         pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css');
         pxWidget.load(window, document, 'link', 'https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css');
     }
