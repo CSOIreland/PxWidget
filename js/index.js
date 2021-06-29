@@ -32,19 +32,32 @@ pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.
 
 // ChartJS - https://github.com/chartjs/Chart.js/
 pxWidget.noConflict.Chart = window.Chart ? window.Chart : null;
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/chartjs/Chart.js@v2.9.3/dist/Chart.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/chartjs/Chart.js@v2.9.4/dist/Chart.min.js');
 // ChartJS stacking percentage - https://github.com/y-takey/chartjs-plugin-stacked100
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/y-takey/chartjs-plugin-stacked100@v0.7.1/src/index.js');
 // ChartJS chartjs-plugin-colorschemes - https://github.com/nagix/chartjs-plugin-colorschemes
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/nagix/chartjs-plugin-colorschemes@v0.4.0/dist/chartjs-plugin-colorschemes.min.js');
 
-// ChartGeo module for charting maps with legends - https://github.com/sgratzl/chartjs-chart-geo
-pxWidget.noConflict.ChartGeo = window.ChartGeo ? window.ChartGeo : null;
-pxWidget.load(window, document, 'script', 'https://unpkg.com/chartjs-chart-geo@2.1.0/build/Chart.Geo.min.js');
+// Leaflet - https://github.com/Leaflet/Leaflet
+pxWidget.noConflict.L = window.L ? window.L : null;
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/leaflet/leaflet@v1.7.1/dist/leaflet.min.js');
+// Leaflet CSS
+pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/leaflet/leaflet@v1.7.1/dist/leaflet.min.css');
 
-// Convert GeoJSON to TopoJSON - https://github.com/shancarter/distillery
-pxWidget.noConflict.topojson = window.topojson ? window.topojson : null;
-pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/topojson.js' : 'js/topojson.min.js'));
+//Leaflet Choropleth - https://github.com/timwis/leaflet-choropleth
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/timwis/leaflet-choropleth@v1.1.2/dist/choropleth.min.js');
+
+//Leaflet heatmap - https://github.com/OpenGov/Leaflet.bubble
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/build/heatmap.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/plugins/leaflet-heatmap/leaflet-heatmap.min.js');
+
+//Leaflet.fullscreen https://github.com/Leaflet/Leaflet.fullscreen
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.0.0/Control.FullScreen.min.js');
+pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.0.0/Control.FullScreen.min.css');
+
+//Turf js - https://turfjs.org/
+pxWidget.noConflict.turf = window.turf ? window.turf : null;
+pxWidget.load(window, document, 'script', 'https://unpkg.com/@turf/turf@6.3.0/turf.min.js');
 
 // JSON-Stat - https://github.com/badosa/JSON-stat/
 pxWidget.noConflict.JSONstat = window.JSONstat ? window.JSONstat : null;

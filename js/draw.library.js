@@ -40,7 +40,7 @@ pxWidget.draw.init = function (type, id, params, callback) {
 
   // Store callback in namespace
   pxWidget.draw.callback[id] = callback;
-  //add specific class here to div with the id we have 
+  //add specific class hete to div with the id we have 
   switch (type) {
     case pxWidget.draw.type.chart:
       pxWidget.jQuery('#' + id).addClass("chart");
