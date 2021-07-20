@@ -136,13 +136,15 @@ pxWidget.chart.draw = function (id) {
         return label;
     };
 
-    pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (key, value) {
-        if (value.ticks.decimalPlaces) {
-            value.ticks.callback = function (tickValue, tickIndex, tickValues) {
-                return Number(tickValue).toFixed(value.ticks.decimalPlaces);
-            };
-        }
-    });
+    if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (key, value) {
+            if (value.ticks.decimalPlaces) {
+                value.ticks.callback = function (tickValue, tickIndex, tickValues) {
+                    return Number(tickValue).toFixed(value.ticks.decimalPlaces);
+                };
+            }
+        });
+    }
 
     // Run ChartJS
     new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
