@@ -3,7 +3,7 @@ PxWidget - ISOGRAM
 *******************************************************************************/
 // Init
 var pxWidget = pxWidget || {};
-pxWidget.debug = false; // Enable/Disable minified JS/CSS resources
+pxWidget.debug = true; // Enable/Disable minified JS/CSS resources
 pxWidget.root = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget@f5cea90/';
 
 (function (i, s, o, g, r, a, m) {
