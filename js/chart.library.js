@@ -147,7 +147,17 @@ pxWidget.chart.draw = function (id) {
     }
 
     // Run ChartJS
-    new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
+    var chart = new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
+
+    /* This code block allows us to optionally hide a slide of a pie chart by default. It places a strike through the category, 
+    also allowing the user to re-selecet it if they wish. No use case at present but may be need in the future
+
+    if ((pxWidget.draw.params[id].type == "pie" || pxWidget.draw.params[id].type == "doughnut") && pxWidget.draw.params[id].hiddenCategories) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].hiddenCategories, function (index, value) {
+            chart.getDatasetMeta(0).data[value].hidden = true;
+        });
+        chart.update();
+    } */
 
     // Clear labels/data before completion
     pxWidget.draw.params[id].data.labels = [];

@@ -13,6 +13,7 @@ pxWidget.table.response = null;
 pxWidget.table.jsonStat = null;
 
 pxWidget.table.pivot = {};
+pxWidget.table.pivot.isMetric = [];
 pxWidget.table.pivot.dimensionCode = [];
 pxWidget.table.pivot.variableCodes = [];
 
@@ -32,6 +33,11 @@ pxWidget.table.draw = function (id) {
         return;
     }
 
+    var redundantColumns = [];
+    if (pxWidget.draw.params[id].removeRedundantColumns) {
+        redundantColumns = pxWidget.table.getRedundantColumns(id)
+    };
+
     pxWidget.table.loadCSS(id);
 
     if (pxWidget.jQuery.fn.DataTable.isDataTable('#' + id + " table")) {
@@ -47,7 +53,7 @@ pxWidget.table.draw = function (id) {
         type: 'arrobj',
         meta: true,
         unit: true,
-        content: "label"
+        content: "id"
     });
 
     // Pivot table on demand
@@ -65,6 +71,16 @@ pxWidget.table.draw = function (id) {
 
     pxWidget.jQuery('#' + id).append(table);
 
+    //check after pivoting that there is more than one row in the table for redundancy
+    if (jsonTable.data.length == 1) {
+        redundantColumns = []
+    }
+
+    //check in case hidden columns has a value. This should overwrite redundant columns 
+    if (pxWidget.draw.params[id].hiddenDimensions && pxWidget.draw.params[id].hiddenDimensions.length) {
+        redundantColumns = pxWidget.draw.params[id].hiddenDimensions;
+    };
+
     // Reset and Populate columns with Dimensions
     var tableColumns = [];
     pxWidget.jQuery.each(data.id, function (i, v) {
@@ -73,28 +89,50 @@ pxWidget.table.draw = function (id) {
             "html": data.Dimension(i).label
         });
 
+        //check if column is redundant 
+        var isRedundant = false;
+        if (pxWidget.jQuery.inArray(data.id[i], redundantColumns) != -1) {
+            isRedundant = true;
+        };
+
         pxWidget.jQuery('#' + id + " table").find("[name=header-row]").append(tableHeading);
 
         // Append datatable column
         tableColumns.push({
             data: data.id[i],
-            "visible": data.id[i] == pxWidget.draw.params[id].pivot ? false : true,
-            "searchable": data.id[i] == pxWidget.draw.params[id].pivot ? false : true
+            "visible": data.id[i] == pxWidget.draw.params[id].pivot || isRedundant ? false : true,
+            "searchable": data.id[i] == pxWidget.draw.params[id].pivot || isRedundant ? false : true,
+            render: function (cell, type, row, meta) {
+                return data.Dimension(data.id[i]).Category(cell).label
+            }
         });
     });
 
-    // Populate Unit column
-    var unitHeading = pxWidget.jQuery("<th>", {
-        "html": pxWidget.draw.params[id].internationalisation.unit,
-        "class": "text-dark bg-neutral"
-    });
+    // The column Unit is irrelevent if pivoting by Statitic
+    if (!pxWidget.table.pivot.dimensionCode[id] || !pxWidget.table.pivot.isMetric[id]) {
+        //check if unit column is redundant 
+        var isRedundant = false;
+        if (pxWidget.jQuery.inArray("UNIT", redundantColumns) != -1) {
+            isRedundant = true;
+        };
 
-    pxWidget.jQuery('#' + id + " table").find("[name=header-row]").append(unitHeading);
+        // Populate Unit column
+        var unitHeading = pxWidget.jQuery("<th>", {
+            "html": pxWidget.draw.params[id].internationalisation.unit,
+            "class": "text-dark bg-neutral"
+        });
 
-    tableColumns.push({
-        "data": "unit.label",
-        "type": "data"
-    });
+        pxWidget.jQuery('#' + id + " table").find("[name=header-row]").append(unitHeading);
+
+        tableColumns.push({
+            "data": "unit.label",
+            "type": "data",
+            "visible": isRedundant ? false : true,
+            "searchable": isRedundant ? false : true,
+        });
+
+    }
+
 
     // Populate Pivoted columns
     if (pxWidget.table.pivot.variableCodes[id].length) {
@@ -104,13 +142,14 @@ pxWidget.table.draw = function (id) {
                 "type": "data",
                 "class": "text-right font-weight-bold",
                 "defaultContent": pxWidget.draw.params[id].defaultContent || "",
-                "render": function (cell, type, row, meta) {
-                    return pxWidget.formatNumber(cell, row.unit.decimals);
+                render: function (cell, type, row, meta) {
+                    // If pivoting by Statitic then the decimals may be different within the same row
+                    return pxWidget.formatNumber(cell, pxWidget.table.pivot.isMetric[id] ? data.Dimension(pxWidget.table.pivot.dimensionCode[id]).Category(value).unit.decimals : row.unit.decimals);
                 }
             });
             var pivotHeading = pxWidget.jQuery("<th>",
                 {
-                    "html": value,
+                    "html": pxWidget.table.pivot.isMetric[id] ? data.Dimension(pxWidget.table.pivot.dimensionCode[id]).Category(value).label + " (" + data.Dimension(pxWidget.table.pivot.dimensionCode[id]).Category(value).unit.label + ")" : data.Dimension(pxWidget.table.pivot.dimensionCode[id]).Category(value).label,
                     "class": "text-right text-light bg-primary"
                 });
             pxWidget.jQuery('#' + id + " table").find("[name=header-row]").append(pivotHeading);
@@ -186,6 +225,10 @@ pxWidget.table.pivot.compute = function (id, arrobjTable) {
         pxWidget.table.pivot.dimensionCode[id] = pxWidget.draw.params[id].pivot;
     }
 
+
+    // Check if pivoting by Statistic
+    pxWidget.table.pivot.isMetric[id] = arrobjTable.meta.dimensions[pxWidget.table.pivot.dimensionCode[id]].role == "metric" ? true : false;
+
     var reducedTable = pxWidget.jQuery.extend(true, {}, arrobjTable);
     var pivotedTable = pxWidget.jQuery.extend(true, {}, arrobjTable);
     var spliceOffset = 0;
@@ -255,6 +298,42 @@ pxWidget.table.compile = function (id) {
         return false;
     }
 }
+
+pxWidget.table.getRedundantColumns = function (id) {
+    var redundantColumns = [];
+
+    pxWidget.jQuery.each(pxWidget.table.jsonStat.Dimension(), function (index, value) {
+        //Only check non pivoted columns
+        if (pxWidget.table.jsonStat.id[index] != pxWidget.table.pivot.dimensionCode[id]) {
+            if (value.id.length == 1) {
+                redundantColumns.push(pxWidget.table.jsonStat.id[index]);
+            }
+        }
+    });
+    var units = [];
+    //check all units to see if that column is redundant
+    pxWidget.jQuery.each(pxWidget.table.jsonStat.Dimension({ role: "metric" })[0].Category(), function (index, value) {
+        units.push(value.unit.label)
+    });
+
+    var unitRedundant = true;
+    if (units.length > 1) {
+        pxWidget.jQuery.each(units, function (index, value) {
+            if (index != units.length - 1) {
+                if (value != units[index + 1]) {
+                    unitRedundant = false;
+                    return false
+                }
+            }
+        });
+    }
+    if (unitRedundant) {
+        redundantColumns.push("UNIT")
+    }
+
+
+    return redundantColumns;
+};
 
 pxWidget.table.ajax.readDataset = function (id) {
 

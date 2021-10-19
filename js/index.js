@@ -41,6 +41,8 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/nagix/cha
 // Leaflet - https://github.com/Leaflet/Leaflet
 pxWidget.noConflict.L = window.L ? window.L : null;
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/leaflet/leaflet@v1.7.1/dist/leaflet.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/Esri/esri-leaflet@v3.0.3/dist/esri-leaflet.min.js');
+
 // Leaflet CSS
 pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/leaflet/leaflet@v1.7.1/dist/leaflet.min.css');
 

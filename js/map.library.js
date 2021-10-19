@@ -92,7 +92,6 @@ The parent outer function must be async
                     layer.setStyle({
                         "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
                     })
-                    this.closePopup();
                 });
             }
         });
@@ -141,26 +140,52 @@ heatmapData = {
 
     };
 
-    var dataLink = pxWidget.draw.params[id].link ? "<br><a target='_blank' href='" + pxWidget.draw.params[id].link + "'>" + pxWidget.draw.params[id].link + "</a>" : "";
-    var copyright = pxWidget.draw.params[id].copyright ? '<br>&copy; ' + pxWidget.map.jsonstat[id].extension.copyright.name : "";
-    var attribution = 'Google Maps' + "<br>" + pxWidget.map.jsonstat[id].updated + dataLink + copyright
-    var baseLayer = pxWidget.L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-        attribution: attribution
-    });
+    //find the edges of the geojson to set the max bounds, add extra so user can always see some of the geoJson
+    var enveloped = pxWidget.turf.envelope(pxWidget.map.geojson[id]);
+    var height = (enveloped.bbox[1] - enveloped.bbox[3]);
+    var width = (enveloped.bbox[0] - enveloped.bbox[2]);
 
     var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
+        attributionControl: false,
         renderer: pxWidget.L.canvas(),
         fullscreenControl: true,
         fullscreenControlOptions: pxWidget.draw.params[id].fullScreen,
-        layers: [baseLayer, choroplethLayer || heatmapLayer]
+        layers: [choroplethLayer || heatmapLayer],
+        maxBounds: [
+            [enveloped.bbox[1] + (height / 2), enveloped.bbox[2] - (width / 2)],
+            [enveloped.bbox[3] - (height / 2), enveloped.bbox[0] + (width / 2)]
+        ]
     });
+
+    var localAttribution = "<br>" + pxWidget.map.jsonstat[id].updated;
+    localAttribution += pxWidget.draw.params[id].link ? " <a target='_blank' href='" + pxWidget.draw.params[id].link + "'>" + pxWidget.draw.params[id].link + "</a> <br>" : "";
+    localAttribution += pxWidget.draw.params[id].copyright ? '<br>&copy; ' + pxWidget.map.jsonstat[id].extension.copyright.name : "";
+
+    var attribution = pxWidget.L.control.attribution();
+    attribution.addAttribution(localAttribution);
+    attribution.addTo(map);
+
+    //add baselayers
+    pxWidget.jQuery.each(pxWidget.config.baseMap.leaflet, function (index, value) {
+        pxWidget.L.tileLayer(value.url, value.options).addTo(map);
+    });
+
+    pxWidget.jQuery.each(pxWidget.config.baseMap.esri, function (index, value) {
+        pxWidget.L.esri.tiledMapLayer(value).addTo(map);
+    });
+
     if (heatmapData) {
         heatmapLayer.setData(heatmapData);
     }
     var allFeatures = pxWidget.L.geoJson(pxWidget.map.geojson[id]);
 
     map.fitBounds(allFeatures.getBounds());
+    map.setMinZoom(map.getZoom());
+
+    map.on('mouseout', function (e) {
+        this.closePopup();
+    });
+
     if (choroplethLayer) {
         // Add legend
         var legend = pxWidget.L.control({ position: 'bottomleft' })
