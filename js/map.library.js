@@ -148,8 +148,6 @@ heatmapData = {
     var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
         attributionControl: false,
         renderer: pxWidget.L.canvas(),
-        fullscreenControl: true,
-        fullscreenControlOptions: pxWidget.draw.params[id].fullScreen,
         layers: [choroplethLayer || heatmapLayer],
         maxBounds: [
             [enveloped.bbox[1] + (height / 2), enveloped.bbox[2] - (width / 2)],
