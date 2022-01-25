@@ -18,7 +18,7 @@ pxWidget.config = {
     "baseMap": {
         "leaflet": [
             {
-                "url": "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",
+                "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 "options": {
                     "attribution": "&copy; <a target=\"_blank\" href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
                 }
