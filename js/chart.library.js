@@ -70,8 +70,8 @@ pxWidget.chart.draw = function (id) {
             ctx.textBaseline = "bottom";
             ctx.fillStyle = "#666";
             ctx.font = "14px Arial";
-            ctx.fillText(chart.options.updated, 0, chart.canvas.clientHeight);
-
+            var dateUpdated = pxWidget.moment(chart.options.updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(chart.options.updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
+            ctx.fillText(dateUpdated, 0, chart.canvas.clientHeight);
             ctx.save();
         }
     });
@@ -132,8 +132,20 @@ pxWidget.chart.draw = function (id) {
         }
         label += ': ';
         var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : pxWidget.formatNumber(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]);
+        var unit = data.datasets[tooltipItem.datasetIndex].unit[tooltipItem.index] || "";
         label += value;
+        label += " ";
+        label += "(" + unit + ")";
         return label;
+    };
+
+    //format legend hover
+    pxWidget.draw.params[id].options.legend.onHover = function () {
+        pxWidget.jQuery('body').css('cursor', 'pointer');
+    };
+
+    pxWidget.draw.params[id].options.legend.onLeave = function () {
+        pxWidget.jQuery('body').css('cursor', 'auto');
     };
 
     if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
@@ -145,7 +157,6 @@ pxWidget.chart.draw = function (id) {
             }
         });
     }
-
     // Run ChartJS
     var chart = new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
 
@@ -158,6 +169,9 @@ pxWidget.chart.draw = function (id) {
         });
         chart.update();
     } */
+
+    //put the xAxis back to the way it was for the snippet code
+    pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].reverse();
 
     // Clear labels/data before completion
     pxWidget.draw.params[id].data.labels = [];
@@ -264,28 +278,65 @@ pxWidget.chart.compile = function (id) {
     if (metadataData && metadataData.length) {
         //get xAxis labels
         var xAxisLabels = metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category();
-
-        if (!pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
-            //all variables labels need to go in array
-            pxWidget.jQuery.each(xAxisLabels, function (index, value) {
-                pxWidget.draw.params[id].data.labels.push(value.label);
+        if (pxWidget.draw.params[id].metadata.fluidTime && pxWidget.draw.params[id].metadata.fluidTime.length) {
+            pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]] = [];
+            var timeDimensionCode = null;
+            pxWidget.jQuery.each(metadataData.Dimension(), function (index, value) {
+                if (value.role == "time") {
+                    timeDimensionCode = metadataData.id[index];
+                    return;
+                }
+            });
+            var dimensionSize = metadataData.Dimension(timeDimensionCode).id.length;
+            pxWidget.jQuery.each(pxWidget.draw.params[id].metadata.fluidTime, function (index, value) {
+                //fluid time point is relevant to the end of the array
+                pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].push(metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value) - 1]);
+            });
+            //always reverse xAxis labels for better visualisation
+            pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].reverse();
+            pxWidget.jQuery.each(pxWidget.draw.params[id].metadata.xAxis[timeDimensionCode], function (index, value) {
+                pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(timeDimensionCode).Category(value).label);
             });
         }
         else {
-            var xAxisCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]];
-            pxWidget.jQuery.each(xAxisCodes, function (index, value) {
-                pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category(value).label);
-            });
+            if (!pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
+                //all variables labels need to go in array
+                pxWidget.jQuery.each(xAxisLabels, function (index, value) {
+                    pxWidget.draw.params[id].data.labels.push(value.label);
+                });
+            }
+            else {
+                //always reverse xAxis labels for better visualisation
+                var xAxisCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].reverse();
+                pxWidget.jQuery.each(xAxisCodes, function (index, value) {
+                    pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category(value).label);
+                });
+            }
         }
+
         //get datasets data
         var isValidData = true;
         pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
+            value.unit = [];
+            if (value.fluidTime) {
+                if (value.fluidTime.length) {
+                    var timeDimensionCode = null;
+                    pxWidget.jQuery.each(metadataData.Dimension(), function (indexDimension, valueDimension) {
+                        if (valueDimension.role == "time") {
+                            timeDimensionCode = metadataData.id[indexDimension];
+                            return;
+                        }
+                    });
+                    var dimensionSize = metadataData.Dimension(timeDimensionCode).id.length;
+                    value.api.query.data.params.dimension[timeDimensionCode].category.index = [metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value.fluidTime[0]) - 1]];
+                }
+            }
+
             var data = value.api.response ? new pxWidget.JSONstat.jsonstat(value.api.response) : null;
             if (data && data.length) {
                 var xAxisDimensionCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length
                     ? pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]
                     : data.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).id;
-
                 //loop through xAxis dimension to get values
                 pxWidget.jQuery.each(xAxisDimensionCodes, function (variableIndex, variableValue) {
                     var valueObj = {
@@ -298,8 +349,9 @@ pxWidget.chart.compile = function (id) {
                         }
 
                     });
-
-                    value.data.push(data.Data(valueObj).value)
+                    value.data.push(data.Data(valueObj).value);
+                    //push a unit into unit array for each value, used in tooltip
+                    value.unit.push(data.Dimension({ role: "metric" })[0].Category(valueObj.STATISTIC).unit.label);
                 });
             } else {
                 pxWidget.draw.error(id, 'pxWidget.chart.compile: invalid data response [' + (index + 1) + ']');

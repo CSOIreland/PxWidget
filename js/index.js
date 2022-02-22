@@ -53,10 +53,6 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/timwis/le
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/build/heatmap.min.js');
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/plugins/leaflet-heatmap/leaflet-heatmap.min.js');
 
-//Leaflet.fullscreen https://github.com/Leaflet/Leaflet.fullscreen
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.0.0/Control.FullScreen.min.js');
-pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.0.0/Control.FullScreen.min.css');
-
 //Turf js - https://turfjs.org/
 pxWidget.noConflict.turf = window.turf ? window.turf : null;
 pxWidget.load(window, document, 'script', 'https://unpkg.com/@turf/turf@6.3.0/turf.min.js');

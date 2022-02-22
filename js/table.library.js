@@ -5,6 +5,7 @@ PxWidget - Chart - Library
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.table = {};
+pxWidget.table.metadata = {};
 pxWidget.table.defaultContent = "";
 pxWidget.table.ajax = {};
 pxWidget.table.callback = {};
@@ -28,6 +29,9 @@ pxWidget.table.draw = function (id) {
 
     // Init & Spinner
     pxWidget.draw.spinner(id);
+    if (!pxWidget.table.metadata.compile(id)) {
+        return;
+    }
 
     if (!pxWidget.table.compile(id)) {
         return;
@@ -185,7 +189,8 @@ pxWidget.table.draw = function (id) {
 
     var footerElements = [];
     if (data.updated) {
-        footerElements.push(data.updated);
+        var dateUpdated = pxWidget.moment(data.updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(data.updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
+        footerElements.push(dateUpdated);
     }
 
     if (pxWidget.draw.params[id].copyright) {
@@ -364,6 +369,91 @@ pxWidget.table.callback.readDataset = function (response, id) {
         pxWidget.table.draw(id);
     }
 };
+
+pxWidget.table.metadata.compile = function (id) {
+    //If no fluid, no need to read metadata
+    if (!pxWidget.draw.params[id].fluidTime || !pxWidget.draw.params[id].fluidTime.length) {
+        return true;
+    }
+
+    //is fluid and no metadata yet, need to get metadata
+    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.response)) {
+        pxWidget.table.ajax.readMetadata(id);
+        // Avoid self-looping
+        return false;
+    }
+    else {
+        return true;
+    }
+
+};
+
+pxWidget.table.ajax.readMetadata = function (id) {
+
+    // Check data query exists
+    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.query)) {
+        pxWidget.draw.error(id, 'pxWidget.table.ajax.readMetadata: missing data query');
+        return;
+    }
+
+    pxWidget.ajax.jsonrpc.request(
+        pxWidget.draw.params[id].metadata.api.query.url,
+        pxWidget.draw.params[id].metadata.api.query.data.method,
+        pxWidget.draw.params[id].metadata.api.query.data.params,
+        "pxWidget.table.callback.readMetadata",
+        id,
+        null,
+        null,
+        { async: false },
+        id)
+};
+
+pxWidget.table.callback.readMetadata = function (response, id) {
+    if (pxWidget.jQuery.isEmptyObject(response)) {
+        pxWidget.draw.error(id, 'pxWidget.table.callback.readMetadata: missing data response');
+    } else {
+        pxWidget.draw.params[id].metadata.api.response = response;
+
+        var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
+
+        if (metadataJsonStat && metadataJsonStat.length) {
+            //Have metadata now, use metadata to get fluid timepoints are replace in query
+            var timeDimensionCode = null;
+            pxWidget.jQuery.each(metadataJsonStat.Dimension(), function (index, value) {
+                if (value.role == "time") {
+                    timeDimensionCode = metadataJsonStat.id[index];
+                    return;
+                }
+            });
+
+            var dimensionSize = metadataJsonStat.Dimension(timeDimensionCode).id.length;
+            pxWidget.draw.params[id].data.api.query.data.params.dimension[timeDimensionCode] = {};
+            pxWidget.draw.params[id].data.api.query.data.params.dimension[timeDimensionCode].category = {};
+            pxWidget.draw.params[id].data.api.query.data.params.dimension[timeDimensionCode].category.index = [];
+
+            pxWidget.jQuery.each(pxWidget.draw.params[id].fluidTime, function (index, value) {
+                //fluid time point is relevant to the end of the array
+                pxWidget.draw.params[id].data.api.query.data.params.dimension[timeDimensionCode].category.index.push(metadataJsonStat.Dimension(timeDimensionCode).id[(dimensionSize - value) - 1]);
+            });
+            // Restart the drawing after successful compilation
+            pxWidget.table.draw(id);
+        }
+        else {
+            pxWidget.draw.error(id, 'pxWidget.table.metadata.compile: invalid data response');
+        }
+
+
+
+
+
+
+
+
+
+
+    }
+};
+
 
 /**
  * Load datatable CSS at asynch runtime

@@ -4,6 +4,7 @@ PxWidget - Chart - Library
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.map = {};
+pxWidget.map.metadata = {};
 pxWidget.map.ajax = {};
 pxWidget.map.callback = {};
 pxWidget.map.geojson = [];
@@ -17,6 +18,9 @@ pxWidget.map.jsonstat = [];
 pxWidget.map.draw = async function (id) {
     // Init & Spinner
     pxWidget.draw.spinner(id);
+    if (!pxWidget.map.metadata.compile(id)) {
+        return;
+    }
 
     if (!pxWidget.map.compile(id)) {
         return;
@@ -54,47 +58,53 @@ The parent outer function must be async
     var choroplethLayer = null;
     var heatmapLayer = null;
     var heatmapData = null;
-    if (geometryType == "MultiPolygon" || geometryType == "Polygon") {
-        choroplethLayer = pxWidget.L.choropleth(pxWidget.map.geojson[id], {
-            valueProperty: 'value',
-            scale: ['white', 'red'],
-            steps: 5,
-            mode: 'q',
-            style: {
-                color: '#6d7878',
-                weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
-                fillOpacity: 0.6
-            },
-            onEachFeature: function (feature, layer) {
-                var value = null;
-                if (feature.properties.valueIsNull) {
-                    value = "..";
-                }
-                else {
-                    value = feature.properties.value.toLocaleString();
-                }
-                layer.bindPopup(
-                    feature.properties.name + ' : <b>' +
-                    value + '</b>'
-                )
-                layer.on('mouseover', function (e) {
-                    var center = pxWidget.turf.center(feature);
-                    var popupAnchor = {
-                        lat: center.geometry.coordinates[1],
-                        lng: center.geometry.coordinates[0]
-                    }
-                    layer.setStyle({
-                        "weight": 2
-                    })
-                    this.openPopup(popupAnchor);
-                });
-                layer.on('mouseout', function (e) {
-                    layer.setStyle({
-                        "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
-                    })
-                });
+    var config = {
+        valueProperty: 'value',
+        scale: ['whitesmoke', pxWidget.draw.params[id].colorScale],
+        steps: 5,
+        mode: 'q',
+        style: {
+            color: '#6d7878',
+            weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
+            fillOpacity: 0.6
+        },
+        onEachFeature: function (feature, layer) {
+            var value = null;
+            if (feature.properties.valueIsNull) {
+                value = "..";
             }
-        });
+            else {
+                value = feature.properties.value.toLocaleString();
+            }
+            layer.bindPopup(
+                feature.properties.name + ' : <b>' +
+                value + '</b> (' + feature.properties.unit + ')'
+            )
+            layer.on('mouseover', function (e) {
+                var popupAnchor = {
+                    lat: e.latlng.lat,
+                    lng: e.latlng.lng
+                }
+
+                layer.setStyle({
+                    "weight": 2
+                })
+                this.openPopup(popupAnchor);
+                //  this.openPopup();
+            });
+            layer.on('mouseout', function (e) {
+                layer.setStyle({
+                    "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
+                })
+            });
+        }
+    };
+    //merge custom config
+
+    pxWidget.jQuery.extend(true, config, pxWidget.draw.params[id].options);
+
+    if (geometryType == "MultiPolygon" || geometryType == "Polygon") {
+        choroplethLayer = pxWidget.L.choropleth(pxWidget.map.geojson[id], config);
     }
     else if (geometryType == "Point") {
 
@@ -154,10 +164,13 @@ heatmapData = {
             [enveloped.bbox[3] - (height / 2), enveloped.bbox[0] + (width / 2)]
         ]
     });
-
-    var localAttribution = "<br>" + pxWidget.map.jsonstat[id].updated;
-    localAttribution += pxWidget.draw.params[id].link ? " <a target='_blank' href='" + pxWidget.draw.params[id].link + "'>" + pxWidget.draw.params[id].link + "</a> <br>" : "";
-    localAttribution += pxWidget.draw.params[id].copyright ? '<br>&copy; ' + pxWidget.map.jsonstat[id].extension.copyright.name : "";
+    var dateUpdated = "";
+    if (pxWidget.map.jsonstat[id].updated) {
+        dateUpdated = pxWidget.moment(pxWidget.map.jsonstat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(pxWidget.map.jsonstat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
+    }
+    var localAttribution = "<br>" + dateUpdated;
+    localAttribution += pxWidget.draw.params[id].link ? " <a target='_blank' href='" + pxWidget.draw.params[id].link + "'>" + pxWidget.draw.params[id].link + "</a> <br>" : "<br>";
+    localAttribution += pxWidget.draw.params[id].copyright ? '&copy; ' + pxWidget.map.jsonstat[id].extension.copyright.name : "";
 
     var attribution = pxWidget.L.control.attribution();
     attribution.addAttribution(localAttribution);
@@ -176,7 +189,6 @@ heatmapData = {
         heatmapLayer.setData(heatmapData);
     }
     var allFeatures = pxWidget.L.geoJson(pxWidget.map.geojson[id]);
-
     map.fitBounds(allFeatures.getBounds());
     map.setMinZoom(map.getZoom());
 
@@ -186,7 +198,7 @@ heatmapData = {
 
     if (choroplethLayer) {
         // Add legend
-        var legend = pxWidget.L.control({ position: 'bottomleft' })
+        var legend = pxWidget.L.control({ position: 'topright' })
         legend.onAdd = function (map) {
             var div = pxWidget.L.DomUtil.create('div', 'info leaflet-legend')
             var limits = choroplethLayer.options.limits
@@ -194,8 +206,8 @@ heatmapData = {
             var labels = []
 
             // Add min & max
-            div.innerHTML = '<div class="labels"><div class="min">' + Math.round(limits[0]) + '</div> \
-   <div class="max">' + Math.round(limits[limits.length - 1]) + '</div></div>'
+            div.innerHTML = '<div class="labels"><div class="min">' + pxWidget.formatNumber(Math.round(limits[0])) + '</div> \
+   <div class="max">' + pxWidget.formatNumber(Math.round(limits[limits.length - 1])) + '</div></div>'
 
             limits.forEach(function (limit, index) {
                 labels.push('<li style="background-color: ' + colors[index] + '"></li>')
@@ -299,6 +311,78 @@ pxWidget.map.compile = function (id) {
     }
 };
 
+pxWidget.map.metadata.compile = function (id) {
+
+    //If no fluid, no need to read metadata
+    if (!pxWidget.draw.params[id].data.datasets[0].fluidTime || !pxWidget.draw.params[id].data.datasets[0].fluidTime.length) {
+        return true;
+    }
+
+    //is fluid, need to get metadata
+    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.response)) {
+        pxWidget.map.ajax.readMetadata(id);
+        // Avoid self-looping
+        return false;
+    }
+    else {
+        return true;
+    }
+
+};
+
+pxWidget.map.ajax.readMetadata = function (id) {
+    // Check data query exists
+    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.query)) {
+        pxWidget.draw.error(id, 'pxWidget.map.ajax.readMetadata: missing data query');
+        return;
+    }
+
+    pxWidget.ajax.jsonrpc.request(
+        pxWidget.draw.params[id].metadata.api.query.url,
+        pxWidget.draw.params[id].metadata.api.query.data.method,
+        pxWidget.draw.params[id].metadata.api.query.data.params,
+        "pxWidget.map.callback.readMetadata",
+        id,
+        null,
+        null,
+        { async: false },
+        id)
+};
+
+pxWidget.map.callback.readMetadata = function (response, id) {
+    if (pxWidget.jQuery.isEmptyObject(response)) {
+        pxWidget.draw.error(id, 'pxWidget.map.callback.readMetadata: missing data response');
+    } else {
+        pxWidget.draw.params[id].metadata.api.response = response;
+        var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
+
+        if (metadataJsonStat && metadataJsonStat.length) {
+            //Have metadata now, use metadata to get fluid timepoints are replace in query
+            var timeDimensionCode = null;
+            pxWidget.jQuery.each(metadataJsonStat.Dimension(), function (index, value) {
+                if (value.role == "time") {
+                    timeDimensionCode = metadataJsonStat.id[index];
+                    return;
+                }
+            });
+            var dimensionSize = metadataJsonStat.Dimension(timeDimensionCode).id.length;
+            var relativeTimecode = metadataJsonStat.Dimension(timeDimensionCode).id[(dimensionSize - pxWidget.draw.params[id].data.datasets[0].fluidTime[0]) - 1]
+            pxWidget.draw.params[id].data.datasets[0].api.query.data.params.dimension[timeDimensionCode].category.index = [relativeTimecode];
+
+        }
+        else {
+            pxWidget.draw.error(id, 'pxWidget.map.metadata.compile: invalid data response');
+        }
+
+
+
+
+        // Restart the drawing after successful compilation
+        pxWidget.map.draw(id);
+    }
+};
+
+
 pxWidget.map.addValues = function (id) {
     var mapToDisplayId = pxWidget.draw.params[id].mapDimension;
     var dataQueryObj = {};
@@ -314,7 +398,7 @@ pxWidget.map.addValues = function (id) {
     pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, value) {
         var guid = value.properties.code;
 
-        dataQueryObj[mapToDisplayId] = guid
+        dataQueryObj[mapToDisplayId] = guid;
         if (pxWidget.map.jsonstat[id].Data(dataQueryObj).value === null) {
             value.properties.value = 0;
             value.properties.valueIsNull = true;
@@ -323,6 +407,7 @@ pxWidget.map.addValues = function (id) {
             value.properties.value = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
             value.properties.valueIsNull = false;
         }
+        value.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label
         //add name of feature to geoJOSN properties from JSONstat metadata
         value.properties.name = geoDimension.Category(guid).label;
     });
