@@ -69,7 +69,8 @@ pxWidget.table.draw = function (id) {
     else
         var table = pxWidget.jQuery('<table>', { "class": "display", "style": "width: 100%" });
 
-    table.append(pxWidget.jQuery('<caption>', { "text": pxWidget.draw.params[id].title ? pxWidget.draw.params[id].data.api.response.label.trim() : "" }));
+    table.append(pxWidget.jQuery('<caption>', { "text": pxWidget.draw.params[id].title ? pxWidget.draw.params[id].data.api.response.extension.matrix + ": " + pxWidget.draw.params[id].data.api.response.label : "" }));
+
     table.append(pxWidget.jQuery('<thead>').append(pxWidget.jQuery('<tr>', { "name": "header-row" })));
     table.append(pxWidget.jQuery('<tbody>'));
 

@@ -69,12 +69,13 @@ The parent outer function must be async
             fillOpacity: 0.6
         },
         onEachFeature: function (feature, layer) {
+            var decimal = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals;
             var value = null;
             if (feature.properties.valueIsNull) {
                 value = "..";
             }
             else {
-                value = feature.properties.value.toLocaleString();
+                value = pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal);
             }
             layer.bindPopup(
                 feature.properties.name + ' : <b>' +
@@ -155,8 +156,22 @@ heatmapData = {
     var height = (enveloped.bbox[1] - enveloped.bbox[3]);
     var width = (enveloped.bbox[0] - enveloped.bbox[2]);
 
+    var fullscreen = false;
+    //check if full screen is enabled on the device
+    if (document.fullscreenEnabled ||
+        document.webkitFullscreenEnabled ||
+        document.msFullscreenEnabled) {
+        fullscreen = true;
+    }
     var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
         attributionControl: false,
+        fullscreenControl: fullscreen,
+        fullscreenControlOptions: {
+            position: 'topleft',
+            title: pxWidget.draw.params[id].fullScreen.title, // change the title of the button, default Full Screen
+            titleCancel: pxWidget.draw.params[id].fullScreen.titleCancel,
+        },
+        tap: false, // ref https://github.com/Leaflet/Leaflet/issues/7255
         renderer: pxWidget.L.canvas(),
         layers: [choroplethLayer || heatmapLayer],
         maxBounds: [
@@ -401,13 +416,16 @@ pxWidget.map.addValues = function (id) {
         dataQueryObj[mapToDisplayId] = guid;
         if (pxWidget.map.jsonstat[id].Data(dataQueryObj).value === null) {
             value.properties.value = 0;
+            value.properties.statistic = dataQueryObj.STATISTIC;
             value.properties.valueIsNull = true;
         }
         else {
+
             value.properties.value = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
+            value.properties.statistic = dataQueryObj.STATISTIC;
             value.properties.valueIsNull = false;
         }
-        value.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label
+        value.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label;
         //add name of feature to geoJOSN properties from JSONstat metadata
         value.properties.name = geoDimension.Category(guid).label;
     });

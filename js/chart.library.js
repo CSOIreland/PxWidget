@@ -131,7 +131,9 @@ pxWidget.chart.draw = function (id) {
                 break;
         }
         label += ': ';
-        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : pxWidget.formatNumber(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]);
+
+        var decimal = data.datasets[tooltipItem.datasetIndex].decimal[tooltipItem.index] || null;
+        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : pxWidget.formatNumber(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index], decimal);
         var unit = data.datasets[tooltipItem.datasetIndex].unit[tooltipItem.index] || "";
         label += value;
         label += " ";
@@ -316,6 +318,7 @@ pxWidget.chart.compile = function (id) {
 
         //get datasets data
         var isValidData = true;
+        var sortValues = [];
         pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
             value.unit = [];
             if (value.fluidTime) {
@@ -338,6 +341,9 @@ pxWidget.chart.compile = function (id) {
                     ? pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]
                     : data.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).id;
                 //loop through xAxis dimension to get values
+                //make decimal and unit backward compatable
+                value.unit = [];
+                value.decimal = [];
                 pxWidget.jQuery.each(xAxisDimensionCodes, function (variableIndex, variableValue) {
                     var valueObj = {
                         [Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]: variableValue
@@ -349,10 +355,39 @@ pxWidget.chart.compile = function (id) {
                         }
 
                     });
-                    value.data.push(data.Data(valueObj).value);
-                    //push a unit into unit array for each value, used in tooltip
-                    value.unit.push(data.Dimension({ role: "metric" })[0].Category(valueObj.STATISTIC).unit.label);
+
+                    //sorting required, create new array of values to rearrange later 
+                    if (pxWidget.draw.params[id].data.datasets.length == 1 && pxWidget.draw.params[id].sort) {
+
+                        sortValues.push(
+                            {
+                                "value": data.Data(valueObj).value,
+                                "xAxisDimensionCode": variableValue,
+                                "unit": data.Dimension({ role: "metric" })[0].Category(valueObj.STATISTIC).unit.label,
+                                "decimal": data.Dimension({ role: "metric" })[0].Category(valueObj.STATISTIC).unit.decimals
+                            }
+                        )
+                    }
+                    else {
+                        value.data.push(data.Data(valueObj).value);
+                        //push a unit into unit array for each value, used in tooltip
+                        value.unit.push(data.Dimension({ role: "metric" })[0].Category(valueObj.STATISTIC).unit.label);
+                        //push a decimal into unit array for each value, used in tooltip
+                        value.decimal.push(data.Dimension({ role: "metric" })[0].Category(valueObj.STATISTIC).unit.decimals);
+                    }
+
                 });
+
+                if (sortValues.length) {
+                    sortValues.sort((a, b) => b.value - a.value);
+                    pxWidget.draw.params[id].data.labels = [];
+                    pxWidget.jQuery.each(sortValues, function (sortIndex, sortValue) {
+                        pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category(sortValue.xAxisDimensionCode).label);
+                        value.data.push(sortValue.value);
+                        value.unit.push(sortValue.unit);
+                        value.decimal.push(sortValue.decimal);
+                    });
+                };
             } else {
                 pxWidget.draw.error(id, 'pxWidget.chart.compile: invalid data response [' + (index + 1) + ']');
                 isValidData = false;
