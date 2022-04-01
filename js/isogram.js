@@ -4,7 +4,7 @@ PxWidget - ISOGRAM
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.debug = false; // Enable/Disable minified JS/CSS resources
-pxWidget.root = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget@2.4.0/';
+pxWidget.root = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget@2.4.1/';
 
 (function (i, s, o, g, r, a, m) {
     i[r].queue = i[r].queue || function () {
@@ -23,7 +23,7 @@ pxWidget.root = 'https://cdn.jsdelivr.net/gh/CSOIreland/PxWidget@2.4.0/';
                     var xhttp = new XMLHttpRequest;
                     xhttp.onreadystatechange = function () {
                         if (this.readyState == 4 && this.status == 200) {
-                            window.eval(m ? this.responseText.replace(/jQuery/g, 'pxWidget.jQuery') : this.responseText);
+                            window.eval(m ? this.responseText.replace(/jQuery/g, 'pxWidget.jQuery').replace(/L\.DomUtil/g, 'pxWidget.L.DomUtil') : this.responseText);
                         }
                     };
                     xhttp.open("GET", e.src, false);

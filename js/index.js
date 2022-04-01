@@ -53,9 +53,12 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/timwis/le
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/build/heatmap.min.js');
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/plugins/leaflet-heatmap/leaflet-heatmap.min.js');
 
+//font-awesome - https://github.com/FortAwesome/Font-Awesome/
+pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.11.2/css/all.min.css');
+
 //Leaflet.Control.FullScreen https://github.com/brunob/leaflet.fullscreen
 pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.2.0/Control.FullScreen.min.css');
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.2.0/Control.FullScreen.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.2.0/Control.FullScreen.min.js', null, null, true);
 
 //Turf js - https://turfjs.org/
 pxWidget.noConflict.turf = window.turf ? window.turf : null;
