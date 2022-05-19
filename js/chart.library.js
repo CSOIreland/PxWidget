@@ -53,7 +53,7 @@ pxWidget.chart.draw = function (id) {
     }
 
     // Store the Copyright and updated date into options to access within Chart
-    pxWidget.draw.params[id].options.updated = pxWidget.draw.params[id].metadata.api.response.updated || "";
+    pxWidget.draw.params[id].options.updated = pxWidget.draw.params[id].metadata.api.response.updated || null;
 
     pxWidget.draw.params[id].plugins = pxWidget.draw.params[id].plugins || [];
     pxWidget.draw.params[id].plugins.push({
@@ -67,11 +67,13 @@ pxWidget.chart.draw = function (id) {
             ctx.fillRect(0, 0, chart.canvas.width, chart.canvas.height);
 
             // Set date
-            ctx.textBaseline = "bottom";
-            ctx.fillStyle = "#666";
-            ctx.font = "14px Arial";
-            var dateUpdated = pxWidget.moment(chart.options.updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(chart.options.updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
-            ctx.fillText(dateUpdated, 0, chart.canvas.clientHeight);
+            if (pxWidget.draw.params[id].options.updated) {
+                ctx.textBaseline = "bottom";
+                ctx.fillStyle = "#666";
+                ctx.font = "14px Arial";
+                var dateUpdated = pxWidget.moment(chart.options.updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(chart.options.updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
+                ctx.fillText(dateUpdated, 0, chart.canvas.clientHeight);
+            }
             ctx.save();
         }
     });
