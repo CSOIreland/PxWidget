@@ -108,8 +108,24 @@ pxWidget.table.draw = function (id) {
             "visible": data.id[i] == pxWidget.draw.params[id].pivot || isRedundant ? false : true,
             "searchable": data.id[i] == pxWidget.draw.params[id].pivot || isRedundant ? false : true,
             render: function (cell, type, row, meta) {
-                return data.Dimension(data.id[i]).Category(cell).label
+                //alternative to using "createdCell" and data-order attribute which does not work with render
+                //depending on request type, return either the code to sort if the time column, or the label for any other column
+                //https://stackoverflow.com/questions/51719676/datatables-adding-data-order
+                switch (type) {
+                    case "sort":
+                        return data.Dimension(meta.col).role == "time" ? cell : data.Dimension(data.id[i]).Category(cell).label;
+                        break;
+
+                    default:
+                        return data.Dimension(data.id[i]).Category(cell).label;
+                        break;
+                }
             }
+
+
+
+
+
         });
     });
 
