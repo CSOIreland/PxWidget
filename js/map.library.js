@@ -60,9 +60,8 @@ The parent outer function must be async
     var heatmapData = null;
     var config = {
         valueProperty: 'value',
-        scale: ['whitesmoke', pxWidget.draw.params[id].colorScale],
+        scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
         steps: 5,
-        mode: 'q',
         style: {
             color: '#6d7878',
             weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
@@ -164,6 +163,8 @@ heatmapData = {
         fullscreen = true;
     }
     var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
+        zoomSnap: 0.1,
+        zoomDelta: 0.5,
         attributionControl: false,
         fullscreenControl: fullscreen,
         fullscreenControlOptions: {
@@ -192,13 +193,26 @@ heatmapData = {
     attribution.addTo(map);
 
     //add baselayers
-    pxWidget.jQuery.each(pxWidget.config.baseMap.leaflet, function (index, value) {
-        pxWidget.L.tileLayer(value.url, value.options).addTo(map);
-    });
+    //if leaflet baselayers passed in snippet use these only, otherwise use the default 
+    if (pxWidget.draw.params[id].baseMap.leaflet.length) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].baseMap.leaflet, function (index, value) {
+            pxWidget.L.tileLayer(value.url, value.options).addTo(map);
+        });
+    }
+    else {
+        pxWidget.jQuery.each(pxWidget.config.baseMap.leaflet, function (index, value) {
+            pxWidget.L.tileLayer(value.url, value.options).addTo(map);
+        });
+    }
 
-    pxWidget.jQuery.each(pxWidget.config.baseMap.esri, function (index, value) {
-        pxWidget.L.esri.tiledMapLayer(value).addTo(map);
-    });
+    //if optional esri baselayers are passed in snippet, layer these over leaflet baselayers
+    if (pxWidget.draw.params[id].baseMap.esri.length) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].baseMap.esri, function (index, value) {
+            pxWidget.L.esri.tiledMapLayer(value).addTo(map);
+        });
+    }
+
+
 
     if (heatmapData) {
         heatmapLayer.setData(heatmapData);
@@ -409,24 +423,31 @@ pxWidget.map.addValues = function (id) {
         }
     });
     var geoDimension = pxWidget.map.jsonstat[id].Dimension(mapToDisplayId);
+    //remove features from geoJSON that are not in the classification
+    pxWidget.map.geojson[id].features = pxWidget.jQuery.grep(pxWidget.map.geojson[id].features, function (el, i) {
+        if (pxWidget.jQuery.inArray(el.properties.code, geoDimension.id) == -1) {
+            return false;// feature not in classification so remove
+        }
+        return true; // keep the element in the array
+    });
+    pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, feature) {
 
-    pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, value) {
-        var guid = value.properties.code;
+        var guid = feature.properties.code;
 
         dataQueryObj[mapToDisplayId] = guid;
         if (pxWidget.map.jsonstat[id].Data(dataQueryObj).value === null) {
-            value.properties.value = 0;
-            value.properties.statistic = dataQueryObj.STATISTIC;
-            value.properties.valueIsNull = true;
+            feature.properties.value = 0;
+            feature.properties.statistic = dataQueryObj.STATISTIC;
+            feature.properties.valueIsNull = true;
         }
         else {
 
-            value.properties.value = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
-            value.properties.statistic = dataQueryObj.STATISTIC;
-            value.properties.valueIsNull = false;
+            feature.properties.value = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
+            feature.properties.statistic = dataQueryObj.STATISTIC;
+            feature.properties.valueIsNull = false;
         }
-        value.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label;
+        feature.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label;
         //add name of feature to geoJOSN properties from JSONstat metadata
-        value.properties.name = geoDimension.Category(guid).label;
+        feature.properties.name = geoDimension.Category(guid).label;
     });
 };

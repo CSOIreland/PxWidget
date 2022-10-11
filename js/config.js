@@ -18,15 +18,10 @@ pxWidget.config = {
     "baseMap": {
         "leaflet": [
             {
-                "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
                 "options": {
-                    "attribution": "&copy; <a target=\"_blank\" href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
+                    "attribution": "Tiles &copy; Esri"
                 }
-            }
-        ],
-        "esri": [
-            {
-                "url": "https://tiles.arcgis.com/tiles/uWTLlTypaM5QTKd2/arcgis/rest/services/Basemap%20Public/MapServer"
             }
         ]
     }

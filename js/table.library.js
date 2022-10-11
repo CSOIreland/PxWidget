@@ -18,6 +18,8 @@ pxWidget.table.pivot.isMetric = [];
 pxWidget.table.pivot.dimensionCode = [];
 pxWidget.table.pivot.variableCodes = [];
 
+pxWidget.table.timeColumn = [];
+
 /**
  * Draw a pxWidget Table
  * @param {*} id 
@@ -69,7 +71,7 @@ pxWidget.table.draw = function (id) {
     else
         var table = pxWidget.jQuery('<table>', { "class": "display", "style": "width: 100%" });
 
-    table.append(pxWidget.jQuery('<caption>', { "text": pxWidget.draw.params[id].title ? pxWidget.draw.params[id].data.api.response.extension.matrix + ": " + pxWidget.draw.params[id].data.api.response.label : "" }));
+    table.append(pxWidget.jQuery('<caption>', { "text": pxWidget.draw.params[id].title }));
 
     table.append(pxWidget.jQuery('<thead>').append(pxWidget.jQuery('<tr>', { "name": "header-row" })));
     table.append(pxWidget.jQuery('<tbody>'));
@@ -102,11 +104,16 @@ pxWidget.table.draw = function (id) {
 
         pxWidget.jQuery('#' + id + " table").find("[name=header-row]").append(tableHeading);
 
+        if (data.Dimension(data.id[i]).role == "time") {
+            pxWidget.table.timeColumn[id] = i;
+        };
+
         // Append datatable column
         tableColumns.push({
             data: data.id[i],
             "visible": data.id[i] == pxWidget.draw.params[id].pivot || isRedundant ? false : true,
             "searchable": data.id[i] == pxWidget.draw.params[id].pivot || isRedundant ? false : true,
+            "orderable": data.Dimension(data.id[i]).role == "metric" ? false : true,
             render: function (cell, type, row, meta) {
                 //alternative to using "createdCell" and data-order attribute which does not work with render
                 //depending on request type, return either the code to sort if the time column, or the label for any other column
@@ -121,10 +128,6 @@ pxWidget.table.draw = function (id) {
                         break;
                 }
             }
-
-
-
-
 
         });
     });
@@ -199,6 +202,25 @@ pxWidget.table.draw = function (id) {
         data: jsonTable.data,
         columns: tableColumns
     };
+
+    //Set the default ordering to the time column unless it is already passed in the snippet if it exists, may be pivoted by time
+
+    if (!pxWidget.draw.params[id].options.order.length) {
+        if (pxWidget.table.pivot.dimensionCode[id]) {
+            if (data.Dimension(pxWidget.table.pivot.dimensionCode[id]).role == "time") {
+                options.order = [];
+            }
+            else {
+                options.order = [[pxWidget.table.timeColumn[id], "desc"]];
+            }
+
+        }
+        else {
+            options.order = [[pxWidget.table.timeColumn[id], "desc"]];
+        }
+    }
+
+
     pxWidget.jQuery.extend(true, pxWidget.draw.params[id].options, options);
     pxWidget.jQuery('#' + id + " table").DataTable(pxWidget.draw.params[id].options).on('responsive-display', function (e, datatable, row, showHide, update) {
 

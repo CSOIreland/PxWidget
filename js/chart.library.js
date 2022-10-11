@@ -89,16 +89,17 @@ pxWidget.chart.draw = function (id) {
     if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
         //format yaxis labels
         pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (index, value) {
-            value.ticks.callback = function (label, index, labels) {
-                switch (pxWidget.draw.params[id].type) {
-                    case "horizontalBar":
-                        return label;
-                        break;
-                    default:
-                        return pxWidget.formatNumber(label, 0);
-                        break;
+            if (pxWidget.draw.params[id].type == "horizontalBar") {
+                value.ticks.callback = function (label, index, labels) {
+                    return label;
+                }
+
+            } else {
+                value.ticks.callback = function (label, index, labels) {
+                    return pxWidget.formatNumber(label);
                 }
             }
+
         });
 
         //format xaxis labels if dimension is not time
@@ -152,15 +153,6 @@ pxWidget.chart.draw = function (id) {
         pxWidget.jQuery('body').css('cursor', 'auto');
     };
 
-    if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
-        pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (key, value) {
-            if (value.ticks.decimalPlaces) {
-                value.ticks.callback = function (tickValue, tickIndex, tickValues) {
-                    return Number(tickValue).toFixed(value.ticks.decimalPlaces);
-                };
-            }
-        });
-    }
     // Run ChartJS
     var chart = new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
 
