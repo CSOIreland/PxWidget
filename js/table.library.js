@@ -39,11 +39,6 @@ pxWidget.table.draw = function (id) {
         return;
     }
 
-    var redundantColumns = [];
-    if (pxWidget.draw.params[id].removeRedundantColumns) {
-        redundantColumns = pxWidget.table.getRedundantColumns(id)
-    };
-
     pxWidget.table.loadCSS(id);
 
     if (pxWidget.jQuery.fn.DataTable.isDataTable('#' + id + " table")) {
@@ -78,16 +73,6 @@ pxWidget.table.draw = function (id) {
 
     pxWidget.jQuery('#' + id).append(table);
 
-    //check after pivoting that there is more than one row in the table for redundancy
-    if (jsonTable.data.length == 1) {
-        redundantColumns = []
-    }
-
-    //check in case hidden columns has a value. This should overwrite redundant columns 
-    if (pxWidget.draw.params[id].hiddenDimensions && pxWidget.draw.params[id].hiddenDimensions.length) {
-        redundantColumns = pxWidget.draw.params[id].hiddenDimensions;
-    };
-
     // Reset and Populate columns with Dimensions
     var tableColumns = [];
     pxWidget.jQuery.each(data.id, function (i, v) {
@@ -98,7 +83,7 @@ pxWidget.table.draw = function (id) {
 
         //check if column is redundant 
         var isRedundant = false;
-        if (pxWidget.jQuery.inArray(data.id[i], redundantColumns) != -1) {
+        if (pxWidget.jQuery.inArray(data.id[i], pxWidget.draw.params[id].hideColumns) != -1) {
             isRedundant = true;
         };
 
@@ -136,7 +121,7 @@ pxWidget.table.draw = function (id) {
     if (!pxWidget.table.pivot.dimensionCode[id] || !pxWidget.table.pivot.isMetric[id]) {
         //check if unit column is redundant 
         var isRedundant = false;
-        if (pxWidget.jQuery.inArray("UNIT", redundantColumns) != -1) {
+        if (pxWidget.jQuery.inArray("UNIT", pxWidget.draw.params[id].hideColumns) != -1) {
             isRedundant = true;
         };
 
@@ -341,44 +326,7 @@ pxWidget.table.compile = function (id) {
         pxWidget.draw.error(id, 'pxWidget.table.compile: invalid data response');
         return false;
     }
-}
-
-pxWidget.table.getRedundantColumns = function (id) {
-    var redundantColumns = [];
-
-    pxWidget.jQuery.each(pxWidget.table.jsonStat.Dimension(), function (index, value) {
-        //Only check non pivoted columns
-        if (pxWidget.table.jsonStat.id[index] != pxWidget.table.pivot.dimensionCode[id]) {
-            if (value.id.length == 1) {
-                redundantColumns.push(pxWidget.table.jsonStat.id[index]);
-            }
-        }
-    });
-    var units = [];
-    //check all units to see if that column is redundant
-    pxWidget.jQuery.each(pxWidget.table.jsonStat.Dimension({ role: "metric" })[0].Category(), function (index, value) {
-        units.push(value.unit.label)
-    });
-
-    var unitRedundant = true;
-    if (units.length > 1) {
-        pxWidget.jQuery.each(units, function (index, value) {
-            if (index != units.length - 1) {
-                if (value != units[index + 1]) {
-                    unitRedundant = false;
-                    return false
-                }
-            }
-        });
-    }
-    if (unitRedundant) {
-        redundantColumns.push("UNIT")
-    }
-
-
-    return redundantColumns;
 };
-
 pxWidget.table.ajax.readDataset = function (id) {
 
     // Check data query exists
