@@ -188,6 +188,15 @@ pxWidget.table.draw = function (id) {
         columns: tableColumns
     };
 
+    //define what columns to include in export
+    pxWidget.jQuery.each(tableColumns, function (i, v) {
+        if (v.visible !== false) {
+            //not definitively hidden, include in export
+            pxWidget.draw.params[id].options.buttons[0].exportOptions.columns.push(i);
+            pxWidget.draw.params[id].options.buttons[1].exportOptions.columns.push(i);
+        }
+
+    });
     //Set the default ordering to the time column unless it is already passed in the snippet if it exists, may be pivoted by time
 
     if (!pxWidget.draw.params[id].options.order.length) {

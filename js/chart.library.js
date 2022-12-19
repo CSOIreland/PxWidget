@@ -144,6 +144,31 @@ pxWidget.chart.draw = function (id) {
         return label;
     };
 
+    //for stacked column charts we need to reverse the tooltip order
+    //if any form of pie we can ignore requirement
+    if (pxWidget.draw.params[id].options.scales) {
+        var isStacked = false;
+        //check yAxes
+        pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (index, value) {
+            isStacked = value.stacked;
+            if (isStacked) {
+                return;
+            }
+        });
+        //check xAxes if still not stacked
+        if (!isStacked) {
+            isStacked = pxWidget.draw.params[id].options.scales.xAxes[0].stacked
+        }
+
+        if (isStacked && pxWidget.draw.params[id].type == "bar") {
+            pxWidget.draw.params[id].options.tooltips.itemSort = function (a, b) {
+                return b.datasetIndex - a.datasetIndex
+            };
+        }
+    }
+
+
+
     //format legend hover
     pxWidget.draw.params[id].options.legend.onHover = function () {
         pxWidget.jQuery('body').css('cursor', 'pointer');
