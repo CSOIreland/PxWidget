@@ -207,7 +207,8 @@ pxWidget.chart.draw = function (id) {
 };
 
 pxWidget.chart.ajax.readDataset = function (id) {
-    var args = [];
+    var argsMetadata = [];
+    var argsDataset = [];
 
     // Check metadata query exists
     if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.query)) {
@@ -227,8 +228,8 @@ pxWidget.chart.ajax.readDataset = function (id) {
     if (!allDataQueriesExist)
         return;
 
-    // Read meta-data
-    args.push(pxWidget.ajax.jsonrpc.request(
+    // Read meta-data first before read dataset so we can populate fluid time into datasets if required
+    argsMetadata.push(pxWidget.ajax.jsonrpc.request(
         pxWidget.draw.params[id].metadata.api.query.url,
         pxWidget.draw.params[id].metadata.api.query.data.method,
         pxWidget.draw.params[id].metadata.api.query.data.params,
@@ -236,51 +237,75 @@ pxWidget.chart.ajax.readDataset = function (id) {
         { id: id },
         null,
         null,
-        { async: false },
-        id));
+        { async: false }));
 
-    // Read each dataset/series
-    pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
-        args.push(pxWidget.ajax.jsonrpc.request(
-            value.api.query.url,
-            value.api.query.data.method,
-            value.api.query.data.params,
-            "pxWidget.chart.callback.readDataset",
-            {
-                id: id,
-                index: index
-            },
-            null,
-            null,
-            { async: false },
-            id));
-    });
 
-    if (args.length) {
-        pxWidget.jQuery.when.apply(this, args).done(function () {
-            var hasCompiled = true;
-
-            if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.response)) {
-                return hasCompiled = false;
-            }
-
+    if (argsMetadata.length) {
+        pxWidget.jQuery.when.apply(this, argsMetadata).done(function () {
+            // Read each dataset/series
             pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
-                if (pxWidget.jQuery.isEmptyObject(value.api.response)) {
-                    return hasCompiled = false;
-                }
+                argsDataset.push(pxWidget.ajax.jsonrpc.request(
+                    value.api.query.url,
+                    value.api.query.data.method,
+                    value.api.query.data.params,
+                    "pxWidget.chart.callback.readDataset",
+                    {
+                        id: id,
+                        index: index
+                    },
+                    null,
+                    null,
+                    { async: false }));
             });
 
-            if (hasCompiled) {
-                // Restart the drawing after successful compilation
-                pxWidget.chart.draw(id);
-            } else
-                pxWidget.draw.error(id, 'pxWidget.chart.ajax.readDataset: missing data response(s)');
+            if (argsDataset.length) {
+                pxWidget.jQuery.when.apply(this, argsDataset).done(function () {
+                    var hasCompiled = true;
+
+                    if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.response)) {
+                        return hasCompiled = false;
+                    }
+
+                    pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
+                        if (pxWidget.jQuery.isEmptyObject(value.api.response)) {
+                            return hasCompiled = false;
+                        }
+                    });
+
+                    if (hasCompiled) {
+                        // Restart the drawing after successful compilation
+                        pxWidget.chart.draw(id);
+                    } else
+                        pxWidget.draw.error(id, 'pxWidget.chart.ajax.readDataset: missing data response(s)');
+                });
+            }
         });
     }
+
+
+
+
 };
 
 pxWidget.chart.callback.readMetadata = function (response, callbackParams) {
     pxWidget.draw.params[callbackParams.id].metadata.api.response = response;
+    var metadataData = new pxWidget.JSONstat.jsonstat(response);
+    //update fluid time before fetching datasets
+    pxWidget.jQuery.each(pxWidget.draw.params[callbackParams.id].data.datasets, function (index, value) {
+        if (value.fluidTime) {
+            if (value.fluidTime.length) {
+                var timeDimensionCode = null;
+                pxWidget.jQuery.each(metadataData.Dimension(), function (indexDimension, valueDimension) {
+                    if (valueDimension.role == "time") {
+                        timeDimensionCode = metadataData.id[indexDimension];
+                        return;
+                    }
+                });
+                var dimensionSize = metadataData.Dimension(timeDimensionCode).id.length;
+                value.api.query.data.params.dimension[timeDimensionCode].category.index = [metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value.fluidTime[0]) - 1]];
+            }
+        }
+    });
 };
 
 pxWidget.chart.callback.readDataset = function (response, callbackParams) {
@@ -340,19 +365,6 @@ pxWidget.chart.compile = function (id) {
         var sortValues = [];
         pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
             value.unit = [];
-            if (value.fluidTime) {
-                if (value.fluidTime.length) {
-                    var timeDimensionCode = null;
-                    pxWidget.jQuery.each(metadataData.Dimension(), function (indexDimension, valueDimension) {
-                        if (valueDimension.role == "time") {
-                            timeDimensionCode = metadataData.id[indexDimension];
-                            return;
-                        }
-                    });
-                    var dimensionSize = metadataData.Dimension(timeDimensionCode).id.length;
-                    value.api.query.data.params.dimension[timeDimensionCode].category.index = [metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value.fluidTime[0]) - 1]];
-                }
-            }
 
             var data = value.api.response ? new pxWidget.JSONstat.jsonstat(value.api.response) : null;
             if (data && data.length) {

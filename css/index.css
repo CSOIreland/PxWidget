@@ -101,3 +101,16 @@
         height: 70vh;
     }
 }
+
+
+@media print {
+/*  fix issue with multiple blank pages when widget is on the page, only happens for ChartJs 2.9.4, fixed in v3 onwards
+  https://stackoverflow.com/questions/74820718/chart-js-printing-a-webpage-containing-chart-js-canvas-prints-out-hundreds-of
+  backward compatibility for old widgets 
+  */
+  .pxwidget .chartjs-size-monitor{
+    position: fixed;
+    
+  }
+}
+
