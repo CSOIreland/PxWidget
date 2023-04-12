@@ -80,7 +80,8 @@ pxWidget.draw.spinner = function (id) {
  * @param {*} id 
  * @param {*} message 
  */
-pxWidget.draw.error = function (id, message) {
+pxWidget.draw.error = function (id, message, displayMessage) {
+  displayMessage = displayMessage || false;
   id = id || null;
   message = message || "";
 
@@ -92,8 +93,12 @@ pxWidget.draw.error = function (id, message) {
     });
 
     // Create footer
+    var footerText = "Oops!";
+    if (displayMessage) {
+      footerText += ": " + message;
+    }
     var footer = pxWidget.jQuery('<p>', {
-      "text": "Oops!",
+      "text": footerText,
     }).css({ "text-align": "center" }).get(0).outerHTML;
 
     // Append Error and Footer

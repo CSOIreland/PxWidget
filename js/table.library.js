@@ -25,6 +25,9 @@ pxWidget.table.timeColumn = [];
  * @param {*} id 
  */
 pxWidget.table.draw = function (id) {
+    //retain height of div if widget redrawn for smooth rendering
+    var height = pxWidget.jQuery('#' + id).height();
+    pxWidget.jQuery('#' + id).height(height);
     // Store it for the data sort plugin
     // This implies that every widget is sharing the same defaultContent
     pxWidget.table.defaultContent = pxWidget.draw.params[id].defaultContent;
@@ -213,8 +216,8 @@ pxWidget.table.draw = function (id) {
             options.order = [[pxWidget.table.timeColumn[id], "desc"]];
         }
     }
-
-
+    //remove div height for smooth rendering
+    pxWidget.jQuery('#' + id).height("auto");
     pxWidget.jQuery.extend(true, pxWidget.draw.params[id].options, options);
     pxWidget.jQuery('#' + id + " table").DataTable(pxWidget.draw.params[id].options).on('responsive-display', function (e, datatable, row, showHide, update) {
 

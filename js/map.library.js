@@ -9,6 +9,7 @@ pxWidget.map.ajax = {};
 pxWidget.map.callback = {};
 pxWidget.map.geojson = [];
 pxWidget.map.jsonstat = [];
+pxWidget.map.values = [];
 
 
 /**
@@ -16,6 +17,9 @@ pxWidget.map.jsonstat = [];
  * @param {*} id 
  */
 pxWidget.map.draw = async function (id) {
+    //retain height of div if widget redrawn for smooth rendering
+    var height = pxWidget.jQuery('#' + id).height();
+    pxWidget.jQuery('#' + id).height(height);
     // Init & Spinner
     pxWidget.draw.spinner(id);
     if (!pxWidget.map.metadata.compile(id)) {
@@ -68,16 +72,20 @@ The parent outer function must be async
             fillOpacity: 0.6
         },
         onEachFeature: function (feature, layer) {
-            var decimal = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals;
+
+            var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
             var value = null;
-            if (feature.properties.valueIsNull) {
-                value = "..";
+            var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
+            if (!feature.properties.value) {
+                layer.setStyle({
+                    "fill": false
+                })
             }
-            else {
-                value = pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal);
-            }
+            value = feature.properties.value ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : "..";
+
             layer.bindPopup(
-                feature.properties.name + ' : <b>' +
+                tooltipTitle +
+                feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
                 value + '</b> (' + feature.properties.unit + ')'
             )
             layer.on('mouseover', function (e) {
@@ -161,7 +169,9 @@ heatmapData = {
         document.webkitFullscreenEnabled ||
         document.msFullscreenEnabled) {
         fullscreen = true;
-    }
+    };
+    //remove div height for smooth rendering
+    pxWidget.jQuery('#' + id).height("auto");
     var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
         zoomSnap: 0.1,
         zoomDelta: 0.5,
@@ -230,13 +240,23 @@ heatmapData = {
         var legend = pxWidget.L.control({ position: 'topright' })
         legend.onAdd = function (map) {
             var div = pxWidget.L.DomUtil.create('div', 'info leaflet-legend')
-            var limits = choroplethLayer.options.limits
-            var colors = choroplethLayer.options.colors
-            var labels = []
+            var limits = choroplethLayer.options.limits;
+            var colors = choroplethLayer.options.colors;
+            var labels = [];
 
-            // Add min & max
-            div.innerHTML = '<div class="labels"><div class="min">' + pxWidget.formatNumber(Math.round(limits[0])) + '</div> \
-   <div class="max">' + pxWidget.formatNumber(Math.round(limits[limits.length - 1])) + '</div></div>'
+            if (pxWidget.map.values[id][0].every(element => element === null) == true) {
+                // Add min & max
+                div.innerHTML = '<div class="labels"><div class="min">' + 0 + '</div> \
+ <div class="max">' + 0 + '</div></div>'
+            }
+            else {
+                // Add min & max
+                div.innerHTML = '<div class="labels"><div class="min">' + pxWidget.formatNumber(Math.floor(limits[0])) + '</div> \
+   <div class="max">' + pxWidget.formatNumber(Math.ceil(limits[limits.length - 1])) + '</div></div>'
+            }
+
+
+
 
             limits.forEach(function (limit, index) {
                 labels.push('<li style="background-color: ' + colors[index] + '"></li>')
@@ -402,10 +422,6 @@ pxWidget.map.callback.readMetadata = function (response, id) {
         else {
             pxWidget.draw.error(id, 'pxWidget.map.metadata.compile: invalid data response');
         }
-
-
-
-
         // Restart the drawing after successful compilation
         pxWidget.map.draw(id);
     }
@@ -430,24 +446,29 @@ pxWidget.map.addValues = function (id) {
         }
         return true; // keep the element in the array
     });
+    pxWidget.map.values[id] = []
+    var allValues = [];
     pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, feature) {
 
         var guid = feature.properties.code;
 
         dataQueryObj[mapToDisplayId] = guid;
-        if (pxWidget.map.jsonstat[id].Data(dataQueryObj).value === null) {
-            feature.properties.value = 0;
-            feature.properties.statistic = dataQueryObj.STATISTIC;
-            feature.properties.valueIsNull = true;
-        }
-        else {
+        var featureValue = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
+        feature.properties.value = featureValue;
+        allValues.push(featureValue);
+        feature.properties.statistic = dataQueryObj.STATISTIC;
 
-            feature.properties.value = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
-            feature.properties.statistic = dataQueryObj.STATISTIC;
-            feature.properties.valueIsNull = false;
-        }
         feature.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label;
         //add name of feature to geoJOSN properties from JSONstat metadata
         feature.properties.name = geoDimension.Category(guid).label;
+        var timeDimensionCode = null;
+        pxWidget.jQuery.each(pxWidget.map.jsonstat[id].Dimension(), function (index, value) {
+            if (value.role == "time") {
+                timeDimensionCode = pxWidget.map.jsonstat[id].id[index];
+                return;
+            }
+        });
+        feature.properties.time = pxWidget.map.jsonstat[id].Dimension(timeDimensionCode).Category(dataQueryObj[timeDimensionCode]).label;
     });
+    pxWidget.map.values[id].push(allValues);
 };

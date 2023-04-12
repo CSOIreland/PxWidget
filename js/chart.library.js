@@ -13,6 +13,9 @@ pxWidget.chart.callback = {};
  * @param {*} id 
  */
 pxWidget.chart.draw = function (id) {
+    //retain height of div if widget redrawn for smooth rendering
+    var height = pxWidget.jQuery('#' + id).height();
+    pxWidget.jQuery('#' + id).height(height);
     // Init & Spinner
     pxWidget.draw.spinner(id);
 
@@ -77,11 +80,11 @@ pxWidget.chart.draw = function (id) {
             ctx.save();
         }
     });
-    // Add padding for date
+    // Add padding for date and xAxis labels
     pxWidget.draw.params[id].options.layout = pxWidget.draw.params[id].options.layout || {};
     pxWidget.draw.params[id].options.layout.padding = {
         left: 0,
-        right: 0,
+        right: 22,
         top: 0,
         bottom: 22
     };
@@ -89,7 +92,7 @@ pxWidget.chart.draw = function (id) {
     if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
         //format yaxis labels
         pxWidget.jQuery.each(pxWidget.draw.params[id].options.scales.yAxes, function (index, value) {
-            if (pxWidget.draw.params[id].type == "horizontalBar") {
+            if (pxWidget.draw.params[id].type == "horizontalBar" || pxWidget.draw.params[id].type == "pyramid") {
                 value.ticks.callback = function (label, index, labels) {
                     return label;
                 }
@@ -127,6 +130,7 @@ pxWidget.chart.draw = function (id) {
         switch (meta[0].type) {
             case "pie":
             case "doughnut":
+            case "polarArea":
                 label = " " + data.labels[tooltipItem.index]
                 break;
             default:
@@ -135,8 +139,18 @@ pxWidget.chart.draw = function (id) {
         }
         label += ': ';
 
+        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+
+        if (pxWidget.draw.params[id].type == "pyramid") {
+            if (!isNaN(value)) {
+                //is a number
+                value = Math.abs(value);
+            }
+
+        }
         var decimal = data.datasets[tooltipItem.datasetIndex].decimal[tooltipItem.index] || null;
-        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : pxWidget.formatNumber(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index], decimal);
+        value = pxWidget.formatNumber(value, decimal)
+
         var unit = data.datasets[tooltipItem.datasetIndex].unit[tooltipItem.index] || "";
         label += value;
         label += " ";
@@ -178,27 +192,91 @@ pxWidget.chart.draw = function (id) {
         pxWidget.jQuery('body').css('cursor', 'auto');
     };
 
+    //handle type pyramid
+    var chartTypeOrg = pxWidget.draw.params[id].type;
+    if (pxWidget.draw.params[id].type == "pyramid") {
+
+
+        //if pyramid, check all values in each dataset is positive
+
+        var pryramidIsValid = true;
+        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
+            var hasNegative = value.data.some(v => v < 0);
+            if (hasNegative) {
+                pryramidIsValid = false
+                return
+            }
+        });
+        if (!pryramidIsValid) {
+            pxWidget.draw.error(id, 'pxWidget.chart.draw: Invalid dataset values for pyramid chart', true);
+            return;
+        }
+
+        pxWidget.draw.params[id].type = "horizontalBar"
+        //negate 2nd series values
+        var firstSeriesData = pxWidget.jQuery.extend(true, [], pxWidget.draw.params[id].data.datasets[0].data);
+        var firstSeriesDataNegated = [];
+        pxWidget.jQuery.each(firstSeriesData, function (index, value) {
+            firstSeriesDataNegated.push(value * -1)
+        });
+        pxWidget.draw.params[id].data.datasets[0].data = firstSeriesDataNegated;
+        pxWidget.draw.params[id].options.scales.yAxes[0].stacked = true;
+        pxWidget.draw.params[id].options.scales.xAxes[0].ticks.callback = function (value) {
+            return pxWidget.formatNumber(Math.abs(value))
+        }
+
+        pxWidget.draw.params[id].options.legend = {
+            "position": "bottom",
+            "onClick": (e) => e.stopPropagation()
+        }
+
+        //reverse yAxis labels for better visualisation
+        pxWidget.draw.params[id].options.scales.yAxes[0].ticks.reverse = true;
+    }
+    else {
+        if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
+            //reverse xAxis labels for better visualisation if time
+            if (pxWidget.draw.params[id].metadata.xAxis.role == "time") {
+                pxWidget.draw.params[id].options.scales.xAxes[0].ticks.reverse = true;
+            }
+        }
+
+    }
+    //remove div height for smooth rendering
+    pxWidget.jQuery('#' + id).height("auto");
     // Run ChartJS
     var chart = new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
 
     /* This code block allows us to optionally hide a slide of a pie chart by default. It places a strike through the category, 
-    also allowing the user to re-selecet it if they wish. No use case at present but may be need in the future
+also allowing the user to re-selecet it if they wish. No use case at present but may be need in the future
 
-    if ((pxWidget.draw.params[id].type == "pie" || pxWidget.draw.params[id].type == "doughnut") && pxWidget.draw.params[id].hiddenCategories) {
-        pxWidget.jQuery.each(pxWidget.draw.params[id].hiddenCategories, function (index, value) {
-            chart.getDatasetMeta(0).data[value].hidden = true;
-        });
-        chart.update();
-    } */
-
-    //put the xAxis back to the way it was for the snippet code
-    pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].reverse();
-
+if ((pxWidget.draw.params[id].type == "pie" || pxWidget.draw.params[id].type == "doughnut") && pxWidget.draw.params[id].hiddenCategories) {
+    pxWidget.jQuery.each(pxWidget.draw.params[id].hiddenCategories, function (index, value) {
+        chart.getDatasetMeta(0).data[value].hidden = true;
+    });
+    chart.update();
+} */
     // Clear labels/data before completion
     pxWidget.draw.params[id].data.labels = [];
     pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
         value.data = [];
     });
+
+    //reset dataset labels
+    if (pxWidget.draw.params[id].datasetLabels) {
+
+        if ((pxWidget.draw.params[id].type == "pie" || pxWidget.draw.params[id].type == "doughnut" || pxWidget.draw.params[id].type == "polarArea")) {
+            pxWidget.draw.params[id].options.title.text[pxWidget.draw.params[id].options.title.text.length - 1] = pxWidget.draw.params[id].datasetLabels[0];
+        }
+        else {
+            pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
+                value.label = pxWidget.draw.params[id].datasetLabels[index];
+            });
+        }
+    }
+
+    //reset chart type, may be changed because of pyramid type
+    pxWidget.draw.params[id].type = chartTypeOrg;
 
     // Run optional callback at last
     if (pxWidget.draw.callback[id]) {
@@ -237,7 +315,8 @@ pxWidget.chart.ajax.readDataset = function (id) {
         { id: id },
         null,
         null,
-        { async: false }));
+        { async: false },
+        id));
 
 
     if (argsMetadata.length) {
@@ -255,7 +334,8 @@ pxWidget.chart.ajax.readDataset = function (id) {
                     },
                     null,
                     null,
-                    { async: false }));
+                    { async: false },
+                    id));
             });
 
             if (argsDataset.length) {
@@ -338,8 +418,6 @@ pxWidget.chart.compile = function (id) {
                 //fluid time point is relevant to the end of the array
                 pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].push(metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value) - 1]);
             });
-            //always reverse xAxis labels for better visualisation
-            pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].reverse();
             pxWidget.jQuery.each(pxWidget.draw.params[id].metadata.xAxis[timeDimensionCode], function (index, value) {
                 pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(timeDimensionCode).Category(value).label);
             });
@@ -352,8 +430,7 @@ pxWidget.chart.compile = function (id) {
                 });
             }
             else {
-                //always reverse xAxis labels for better visualisation
-                var xAxisCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].reverse();
+                var xAxisCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]];
                 pxWidget.jQuery.each(xAxisCodes, function (index, value) {
                     pxWidget.draw.params[id].data.labels.push(metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category(value).label);
                 });
@@ -382,7 +459,7 @@ pxWidget.chart.compile = function (id) {
 
                     pxWidget.jQuery.each(data.Dimension(), function (dimensionIndex, dimensionValue) {
                         if (data.id[dimensionIndex] != Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]) {
-                            valueObj[data.id[dimensionIndex]] = dimensionValue.id[0]
+                            valueObj[data.id[dimensionIndex]] = dimensionValue.id[0];
                         }
 
                     });
@@ -409,6 +486,25 @@ pxWidget.chart.compile = function (id) {
 
                 });
 
+                //check to see if the time dimesnion is in the series rather than the xAxis
+                pxWidget.jQuery.each(data.Dimension(), function (dimensionIndex, dimensionValue) {
+                    if (data.id[dimensionIndex] != Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]) {
+                        if (dimensionValue.role == "time") {
+                            //only relevant for fluid time
+                            if (value.fluidTime.length) {
+                                if ((pxWidget.draw.params[id].type == "pie" || pxWidget.draw.params[id].type == "doughnut" || pxWidget.draw.params[id].type == "polarArea")) {
+                                    pxWidget.draw.params[id].options.title.text[pxWidget.draw.params[id].options.title.text.length - 1] = pxWidget.draw.params[id].options.title.text[pxWidget.draw.params[id].options.title.text.length - 1] + " (" + data.Dimension(data.id[dimensionIndex]).Category(dimensionValue.id[0]).label + ")";
+                                }
+                                else {
+                                    //append time value to series name
+                                    value.label += " (" + data.Dimension(data.id[dimensionIndex]).Category(dimensionValue.id[0]).label + ")";
+                                }
+
+                            }
+                        }
+                    }
+
+                });
                 if (sortValues.length) {
                     sortValues.sort((a, b) => b.value - a.value);
                     pxWidget.draw.params[id].data.labels = [];
