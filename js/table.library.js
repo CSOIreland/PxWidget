@@ -138,7 +138,6 @@ pxWidget.table.draw = function (id) {
 
         tableColumns.push({
             "data": "unit.label",
-            "type": "data",
             "visible": isRedundant ? false : true,
             "searchable": isRedundant ? false : true,
         });
