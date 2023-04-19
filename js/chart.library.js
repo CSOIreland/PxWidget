@@ -236,7 +236,7 @@ pxWidget.chart.draw = function (id) {
     else {
         if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
             //reverse xAxis labels for better visualisation if time
-            if (pxWidget.draw.params[id].metadata.xAxis.role == "time") {
+            if (pxWidget.draw.params[id].metadata.xAxis.role == "time" && pxWidget.draw.params[id].type != "horizontalBar") {
                 pxWidget.draw.params[id].options.scales.xAxes[0].ticks.reverse = true;
             }
         }
