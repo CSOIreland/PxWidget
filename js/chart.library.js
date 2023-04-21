@@ -83,7 +83,7 @@ pxWidget.chart.draw = function (id) {
     // Add padding for date and xAxis labels
     pxWidget.draw.params[id].options.layout = pxWidget.draw.params[id].options.layout || {};
     pxWidget.draw.params[id].options.layout.padding = {
-        left: 0,
+        left: 22,
         right: 22,
         top: 0,
         bottom: 22
@@ -237,10 +237,12 @@ pxWidget.chart.draw = function (id) {
         if (typeof pxWidget.draw.params[id].options.scales != "undefined") {
             //reverse xAxis labels for better visualisation if time
             if (pxWidget.draw.params[id].metadata.xAxis.role == "time" && pxWidget.draw.params[id].type != "horizontalBar") {
-                pxWidget.draw.params[id].options.scales.xAxes[0].ticks.reverse = true;
+                //Only reverse if selected timepoints on xAxis. If every time point has been selected for the xAxis, they will naturally be ordered correctly from the metadata
+                if (pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
+                    pxWidget.draw.params[id].options.scales.xAxes[0].ticks.reverse = true;
+                }
             }
         }
-
     }
     //remove div height for smooth rendering
     pxWidget.jQuery('#' + id).height("auto");
