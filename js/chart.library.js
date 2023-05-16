@@ -126,20 +126,24 @@ pxWidget.chart.draw = function (id) {
     //format tooltip value
     pxWidget.draw.params[id].options.tooltips.callbacks.label = function (tooltipItem, data) {
         var label = "";
+        var value = null;
+        var percentage = null;
+        var totalValues = data.datasets[tooltipItem.datasetIndex].data.reduce((partialSum, a) => partialSum + a, 0);
         var meta = Object.values(data.datasets[0]._meta);
         switch (meta[0].type) {
             case "pie":
             case "doughnut":
             case "polarArea":
+                value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                 label = " " + data.labels[tooltipItem.index]
+                percentage = (100 * value) / totalValues;
                 break;
             default:
                 label = " " + data.datasets[tooltipItem.datasetIndex].label || '';
+                value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                 break;
         }
         label += ': ';
-
-        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
 
         if (pxWidget.draw.params[id].type == "pyramid") {
             if (!isNaN(value)) {
@@ -150,11 +154,11 @@ pxWidget.chart.draw = function (id) {
         }
         var decimal = data.datasets[tooltipItem.datasetIndex].decimal[tooltipItem.index] || null;
         value = pxWidget.formatNumber(value, decimal)
-
+        if (percentage) {
+            label += percentage.toFixed(2) + "% ";
+        }
         var unit = data.datasets[tooltipItem.datasetIndex].unit[tooltipItem.index] || "";
-        label += value;
-        label += " ";
-        label += "(" + unit + ")";
+        label += "(" + value + " " + unit + ")";
         return label;
     };
 
@@ -241,6 +245,9 @@ pxWidget.chart.draw = function (id) {
                 if (pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length) {
                     pxWidget.draw.params[id].options.scales.xAxes[0].ticks.reverse = true;
                 }
+            }
+            pxWidget.draw.params[id].options.scales.xAxes[0].ticks.callback = function (value) {
+                return value
             }
         }
     }
