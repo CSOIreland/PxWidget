@@ -247,7 +247,13 @@ pxWidget.chart.draw = function (id) {
                 }
             }
             pxWidget.draw.params[id].options.scales.xAxes[0].ticks.callback = function (value) {
-                return value
+                if (isNaN(value)) {
+                    return value
+                }
+                else {
+                    return pxWidget.formatNumber(value, 0);
+                }
+
             }
         }
     }
