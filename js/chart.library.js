@@ -247,13 +247,17 @@ pxWidget.chart.draw = function (id) {
                 }
             }
             pxWidget.draw.params[id].options.scales.xAxes[0].ticks.callback = function (value) {
-                if (isNaN(value)) {
-                    return value
+                switch (typeof value) {
+                    case "string":
+                        return value
+                        break;
+                    case "number":
+                        return pxWidget.formatNumber(value, 0);
+                        break;
+                    default:
+                        return value
+                        break;
                 }
-                else {
-                    return pxWidget.formatNumber(value, 0);
-                }
-
             }
         }
     }
