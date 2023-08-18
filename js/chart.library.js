@@ -135,8 +135,11 @@ pxWidget.chart.draw = function (id) {
             case "doughnut":
             case "polarArea":
                 value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
-                label = " " + data.labels[tooltipItem.index]
-                percentage = (100 * value) / totalValues;
+                label = " " + data.labels[tooltipItem.index];
+                if (pxWidget.draw.params[id].showPrecentage) {
+                    percentage = (100 * value) / totalValues;
+                }
+
                 break;
             default:
                 label = " " + data.datasets[tooltipItem.datasetIndex].label || '';
