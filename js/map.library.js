@@ -81,7 +81,8 @@ The parent outer function must be async
                     "fill": false
                 })
             }
-            value = feature.properties.value ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : "..";
+
+            value = feature.properties.value || feature.properties.value === 0 ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : pxWidget.draw.params[id].defaultContent;
 
             layer.bindPopup(
                 tooltipTitle +
@@ -345,6 +346,10 @@ pxWidget.map.compile = function (id) {
             dataType: 'json',
             async: false,
             success: function (response) {
+                if (typeof response != "object") {
+                    response = JSON.parse(response)
+                }
+                debugger
                 pxWidget.map.geojson[id] = response;
                 pxWidget.map.addValues(id);
             },
