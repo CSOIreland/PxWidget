@@ -19,7 +19,9 @@ pxWidget.map.values = [];
 pxWidget.map.draw = async function (id) {
     //retain height of div if widget redrawn for smooth rendering
     var height = pxWidget.jQuery('#' + id).height();
-    pxWidget.jQuery('#' + id).height(height);
+    if (height) {
+        pxWidget.jQuery('#' + id).height(height);
+    }
     // Init & Spinner
     pxWidget.draw.spinner(id);
     if (!pxWidget.map.metadata.compile(id)) {
@@ -295,10 +297,10 @@ pxWidget.map.ajax.readDataset = function (id) {
         pxWidget.draw.params[id].data.datasets[0].api.query.url,
         pxWidget.draw.params[id].data.datasets[0].api.query.data.method,
         pxWidget.draw.params[id].data.datasets[0].api.query.data.params,
-        "pxWidget.map.callback.readDataset",
+        "pxWidget.map.callback.readDatasetOnSuccess",
         id,
-        null,
-        null,
+        "pxWidget.map.callback.readDatasetOnError",
+        id,
         { async: false },
         id));
 
@@ -321,8 +323,12 @@ pxWidget.map.ajax.readDataset = function (id) {
 };
 
 
-pxWidget.map.callback.readDataset = function (response, id) {
+pxWidget.map.callback.readDatasetOnSuccess = function (response, id) {
     pxWidget.draw.params[id].data.datasets[0].api.response = response;
+};
+
+pxWidget.map.callback.readDatasetOnError = function (error, id) {
+    pxWidget.draw.error(id, 'pxWidget.map.ajax.readDataset: Unable to retreive data. Please try again later.', true);
 };
 
 pxWidget.map.compile = function (id) {
@@ -349,7 +355,6 @@ pxWidget.map.compile = function (id) {
                 if (typeof response != "object") {
                     response = JSON.parse(response)
                 }
-                debugger
                 pxWidget.map.geojson[id] = response;
                 pxWidget.map.addValues(id);
             },
@@ -395,17 +400,17 @@ pxWidget.map.ajax.readMetadata = function (id) {
         pxWidget.draw.params[id].metadata.api.query.url,
         pxWidget.draw.params[id].metadata.api.query.data.method,
         pxWidget.draw.params[id].metadata.api.query.data.params,
-        "pxWidget.map.callback.readMetadata",
+        "pxWidget.map.callback.readMetadataOnSuccess",
         id,
-        null,
-        null,
+        "pxWidget.map.callback.readMetadataOnError",
+        id,
         { async: false },
         id)
 };
 
-pxWidget.map.callback.readMetadata = function (response, id) {
+pxWidget.map.callback.readMetadataOnSuccess = function (response, id) {
     if (pxWidget.jQuery.isEmptyObject(response)) {
-        pxWidget.draw.error(id, 'pxWidget.map.callback.readMetadata: missing data response');
+        pxWidget.draw.error(id, 'pxWidget.map.callback.readMetadataOnSuccess: missing data response');
     } else {
         pxWidget.draw.params[id].metadata.api.response = response;
         var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
@@ -430,6 +435,10 @@ pxWidget.map.callback.readMetadata = function (response, id) {
         // Restart the drawing after successful compilation
         pxWidget.map.draw(id);
     }
+};
+
+pxWidget.map.callback.readMetadataOnError = function (error, id) {
+    pxWidget.draw.error(id, 'pxWidget.map.ajax.readMetadata: Unable to retreive data. Please try again later.', true);
 };
 
 

@@ -15,7 +15,9 @@ pxWidget.chart.callback = {};
 pxWidget.chart.draw = function (id) {
     //retain height of div if widget redrawn for smooth rendering
     var height = pxWidget.jQuery('#' + id).height();
-    pxWidget.jQuery('#' + id).height(height);
+    if (height) {
+        pxWidget.jQuery('#' + id).height(height);
+    }
     // Init & Spinner
     pxWidget.draw.spinner(id);
 
@@ -333,10 +335,10 @@ pxWidget.chart.ajax.readDataset = function (id) {
         pxWidget.draw.params[id].metadata.api.query.url,
         pxWidget.draw.params[id].metadata.api.query.data.method,
         pxWidget.draw.params[id].metadata.api.query.data.params,
-        "pxWidget.chart.callback.readMetadata",
+        "pxWidget.chart.callback.readMetadataOnSuccess",
         { id: id },
-        null,
-        null,
+        "pxWidget.chart.callback.readMetadataOnError",
+        { id: id },
         { async: false },
         id));
 
@@ -349,13 +351,16 @@ pxWidget.chart.ajax.readDataset = function (id) {
                     value.api.query.url,
                     value.api.query.data.method,
                     value.api.query.data.params,
-                    "pxWidget.chart.callback.readDataset",
+                    "pxWidget.chart.callback.readDatasetOnSuccess",
                     {
                         id: id,
                         index: index
                     },
-                    null,
-                    null,
+                    "pxWidget.chart.callback.readDatasetOnError",
+                    {
+                        id: id,
+                        index: index
+                    },
                     { async: false },
                     id));
             });
@@ -389,7 +394,7 @@ pxWidget.chart.ajax.readDataset = function (id) {
 
 };
 
-pxWidget.chart.callback.readMetadata = function (response, callbackParams) {
+pxWidget.chart.callback.readMetadataOnSuccess = function (response, callbackParams) {
     pxWidget.draw.params[callbackParams.id].metadata.api.response = response;
     var metadataData = new pxWidget.JSONstat.jsonstat(response);
     //update fluid time before fetching datasets
@@ -410,8 +415,16 @@ pxWidget.chart.callback.readMetadata = function (response, callbackParams) {
     });
 };
 
-pxWidget.chart.callback.readDataset = function (response, callbackParams) {
+pxWidget.chart.callback.readMetadataOnError = function (error, callbackParams) {
+    pxWidget.draw.error(callbackParams.id, 'pxWidget.chart.ajax.readDataset: Unable to retreive data. Please try again later.', true);
+};
+
+pxWidget.chart.callback.readDatasetOnSuccess = function (response, callbackParams) {
     pxWidget.draw.params[callbackParams.id].data.datasets[callbackParams.index].api.response = response;
+};
+
+pxWidget.chart.callback.readDatasetOnError = function (error, callbackParams) {
+    pxWidget.draw.error(callbackParams.id, 'pxWidget.chart.ajax.readDataset: Unable to retreive data. Please try again later.', true);
 };
 
 pxWidget.chart.compile = function (id) {

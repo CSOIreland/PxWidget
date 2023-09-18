@@ -68,7 +68,8 @@ pxWidget.draw.spinner = function (id) {
   // Create spinner
   var spinner = pxWidget.jQuery('<img>', {
     "src": pxWidget.root + "image/spinner.gif",
-    "title": "Widget Loading..."
+    "title": "Widget Loading...",
+    "name": "pxwidget-spinner-image",
   });
 
   // Append & hide spinner by default
@@ -89,6 +90,7 @@ pxWidget.draw.error = function (id, message, displayMessage) {
     // Create error
     var error = pxWidget.jQuery('<img>', {
       "src": pxWidget.root + "image/error.png",
+      "class": "pxwidget-error-image",
       "title": "Widget Error"
     });
 
@@ -101,6 +103,8 @@ pxWidget.draw.error = function (id, message, displayMessage) {
       "text": footerText,
     }).css({ "text-align": "center" }).get(0).outerHTML;
 
+    pxWidget.jQuery('#' + id).css({ "text-align": "center" });
+    pxWidget.jQuery('#' + id).height("auto");
     // Append Error and Footer
     pxWidget.jQuery('#' + id).empty().append(error).append(footer);
     if (message)

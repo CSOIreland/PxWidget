@@ -27,7 +27,9 @@ pxWidget.table.timeColumn = [];
 pxWidget.table.draw = function (id) {
     //retain height of div if widget redrawn for smooth rendering
     var height = pxWidget.jQuery('#' + id).height();
-    pxWidget.jQuery('#' + id).height(height);
+    if (height) {
+        pxWidget.jQuery('#' + id).height(height);
+    }
     // Store it for the data sort plugin
     // This implies that every widget is sharing the same defaultContent
     pxWidget.table.defaultContent = pxWidget.draw.params[id].defaultContent;
@@ -350,22 +352,26 @@ pxWidget.table.ajax.readDataset = function (id) {
         pxWidget.draw.params[id].data.api.query.url,
         pxWidget.draw.params[id].data.api.query.data.method,
         pxWidget.draw.params[id].data.api.query.data.params,
-        "pxWidget.table.callback.readDataset",
+        "pxWidget.table.callback.readDatasetOnSuccess",
         id,
-        null,
-        null,
+        "pxWidget.table.callback.readDatasetOnError",
+        id,
         { async: false },
         id)
 };
 
-pxWidget.table.callback.readDataset = function (response, id) {
+pxWidget.table.callback.readDatasetOnSuccess = function (response, id) {
     if (pxWidget.jQuery.isEmptyObject(response)) {
-        pxWidget.draw.error(id, 'pxWidget.table.callback.readDataset: missing data response');
+        pxWidget.draw.error(id, 'pxWidget.table.callback.readDatasetOnSuccess: missing data response');
     } else {
         pxWidget.draw.params[id].data.api.response = response;
         // Restart the drawing after successful compilation
         pxWidget.table.draw(id);
     }
+};
+
+pxWidget.table.callback.readDatasetOnError = function (error, id) {
+    pxWidget.draw.error(id, 'Unable to retreive data. Please try again later.', true);
 };
 
 pxWidget.table.metadata.compile = function (id) {
@@ -398,17 +404,17 @@ pxWidget.table.ajax.readMetadata = function (id) {
         pxWidget.draw.params[id].metadata.api.query.url,
         pxWidget.draw.params[id].metadata.api.query.data.method,
         pxWidget.draw.params[id].metadata.api.query.data.params,
-        "pxWidget.table.callback.readMetadata",
+        "pxWidget.table.callback.readMetadataOnSuccess",
         id,
-        null,
-        null,
+        "pxWidget.table.callback.readMetadataOnError",
+        id,
         { async: false },
         id)
 };
 
-pxWidget.table.callback.readMetadata = function (response, id) {
+pxWidget.table.callback.readMetadataOnSuccess = function (response, id) {
     if (pxWidget.jQuery.isEmptyObject(response)) {
-        pxWidget.draw.error(id, 'pxWidget.table.callback.readMetadata: missing data response');
+        pxWidget.draw.error(id, 'pxWidget.table.callback.readMetadataOnSuccess: missing data response');
     } else {
         pxWidget.draw.params[id].metadata.api.response = response;
 
@@ -452,6 +458,9 @@ pxWidget.table.callback.readMetadata = function (response, id) {
     }
 };
 
+pxWidget.table.callback.readMetadataOnError = function (error, id) {
+    pxWidget.draw.error(id, 'pxWidget.table.ajax.readMetadata: Unable to retreive data. Please try again later.', true);
+};
 
 /**
  * Load datatable CSS at asynch runtime

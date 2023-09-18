@@ -16,7 +16,7 @@ pxWidget.spinner.start = function (id) {
   pxWidget.spinner[id] = pxWidget.spinner[id] || 0;
 
   if (!pxWidget.spinner[id]++) {
-    pxWidget.jQuery('#' + id).find('img').show();
+    pxWidget.jQuery('#' + id).find('[name=pxwidget-spinner-image]').show();
   }
 };
 
@@ -34,7 +34,9 @@ pxWidget.spinner.stop = function (id) {
   if (!pxWidget.spinner[id]) {
     // Stop the spinner immediatelly
     // No fadeOut to aovid stacking the pxWidget rendered below
-    pxWidget.jQuery('#' + id).find('img').hide();
+    //pxWidget.jQuery('#' + id).find('img').hide();
+    pxWidget.jQuery('#' + id).find('[name=pxwidget-spinner-image]').hide();
+
   }
 };
 
