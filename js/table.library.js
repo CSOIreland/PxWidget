@@ -67,7 +67,7 @@ pxWidget.table.draw = function (id) {
 
     // Set the Bootstrap table for Datatable if Bootstrap is found
     if (window.jQuery && window.jQuery.fn.modal)
-        var table = pxWidget.jQuery('<table>', { "class": "table table-striped hover w-100" });
+        var table = pxWidget.jQuery('<table>', { "class": "table table-striped hover", "style": "width: 100%" });
     else
         var table = pxWidget.jQuery('<table>', { "class": "display", "style": "width: 100%" });
 
@@ -485,7 +485,7 @@ pxWidget.table.loadCSS = function (id) {
         pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.min.js', null, null, true);
 
         // pxWidget - Datatable - Bootstrap
-        pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/datatable.bootstrap.min.css' : 'css/datatable.bootstrap.css'));
+        pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/datatable.bootstrap.css' : 'css/datatable.bootstrap.min.css'));
     }
     else {
         // Default css and responsive cc for datatables 

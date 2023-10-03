@@ -144,7 +144,15 @@ pxWidget.chart.draw = function (id) {
 
                 break;
             default:
-                label = " " + data.datasets[tooltipItem.datasetIndex].label || '';
+                if (pxWidget.draw.params[id].options.plugins.stacked100.enable) {
+                    var rateValue = data.calculatedData[tooltipItem.datasetIndex][tooltipItem.index];
+                    label = " " + data.datasets[tooltipItem.datasetIndex].label + " : " + rateValue + "%" || '';
+
+                }
+                else {
+                    label = " " + data.datasets[tooltipItem.datasetIndex].label || '';
+                }
+
                 value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                 break;
         }
@@ -158,7 +166,8 @@ pxWidget.chart.draw = function (id) {
 
         }
         var decimal = data.datasets[tooltipItem.datasetIndex].decimal[tooltipItem.index] || null;
-        value = pxWidget.formatNumber(value, decimal)
+        value = pxWidget.formatNumber(value, decimal);
+
         if (percentage) {
             label += percentage.toFixed(2) + "% ";
         }
