@@ -129,6 +129,7 @@ pxWidget.chart.draw = function (id) {
     pxWidget.draw.params[id].options.tooltips.callbacks.label = function (tooltipItem, data) {
         var label = "";
         var value = null;
+        var unit = data.datasets[tooltipItem.datasetIndex].unit[tooltipItem.index] || "";
         var percentage = null;
         var totalValues = data.datasets[tooltipItem.datasetIndex].data.reduce((partialSum, a) => partialSum + a, 0);
         var meta = Object.values(data.datasets[0]._meta);
@@ -138,7 +139,7 @@ pxWidget.chart.draw = function (id) {
             case "polarArea":
                 value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                 label = " " + data.labels[tooltipItem.index];
-                if (pxWidget.draw.params[id].showPrecentage) {
+                if (pxWidget.draw.params[id].showPercentage) {
                     percentage = (100 * value) / totalValues;
                 }
 
@@ -166,12 +167,12 @@ pxWidget.chart.draw = function (id) {
 
         }
         var decimal = data.datasets[tooltipItem.datasetIndex].decimal[tooltipItem.index] || null;
-        value = pxWidget.formatNumber(value, decimal);
 
+        value = pxWidget.formatNumber(value, decimal);
         if (percentage) {
             label += percentage.toFixed(2) + "% ";
         }
-        var unit = data.datasets[tooltipItem.datasetIndex].unit[tooltipItem.index] || "";
+
         label += "(" + value + " " + unit + ")";
         return label;
     };
