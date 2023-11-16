@@ -136,13 +136,11 @@ pxWidget.chart.draw = function (id) {
         switch (meta[0].type) {
             case "pie":
             case "doughnut":
-            case "polarArea":
                 value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] === null ? data.null : data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                 label = " " + data.labels[tooltipItem.index];
                 if (pxWidget.draw.params[id].showPercentage) {
                     percentage = (100 * value) / totalValues;
                 }
-
                 break;
             default:
                 if (pxWidget.draw.params[id].options.plugins.stacked100.enable) {
