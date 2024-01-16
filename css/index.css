@@ -30,38 +30,29 @@
     clear: both;
 }
 
-.pxwidget .leaflet-legend {
-    color: #555;
-    padding: 6px 8px;
-    font: 12px Arial, Helvetica, sans-serif;
-    font-weight: bold;
-    background: white;
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
+.pxwidget.map .info { 
+    padding: 6px 8px; 
+    font-size: 14px;
+    background: white; 
+    background: rgba(255,255,255,0.8); 
+    box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+    border-radius: 5px; 
+} 
+    
+
+.pxwidget.map .legend { 
+    text-align: left; 
+    line-height: 18px; 
+    color: #555; 
+} 
+
+.pxwidget.map .legend i { 
+    width: 18px; 
+    height: 18px; 
+    float: left; 
+    margin-right: 8px; 
 }
 
-.pxwidget .leaflet-legend ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    clear: both;
-}
-
-.pxwidget .leaflet-legend li {
-    display: inline-block;
-    width: 30px;
-    height: 22px;
-}
-
-.pxwidget .leaflet-legend .min {
-    float: left;
-    padding-bottom: 5px;
-}
-
-.pxwidget .leaflet-legend .max {
-    float: right;
-}
 
 /*If the device window is 575px or smaller*/
 
@@ -114,4 +105,5 @@
     
   }
 }
+
 

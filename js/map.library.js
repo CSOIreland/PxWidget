@@ -89,9 +89,13 @@ The parent outer function must be async
             layer.bindPopup(
                 tooltipTitle +
                 feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
-                value + '</b> (' + feature.properties.unit + ')'
-            )
+                value + '</b> (' + feature.properties.unit + ')');
+
             layer.on('mouseover', function (e) {
+                if (e.sourceTarget.feature.properties.value != null) {
+                    pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "bold");
+                }
+
                 var popupAnchor = {
                     lat: e.latlng.lat,
                     lng: e.latlng.lng
@@ -104,6 +108,7 @@ The parent outer function must be async
                 //  this.openPopup();
             });
             layer.on('mouseout', function (e) {
+                pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "normal");
                 layer.setStyle({
                     "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
                 })
@@ -241,32 +246,47 @@ heatmapData = {
     if (choroplethLayer) {
         // Add legend
         var legend = pxWidget.L.control({ position: 'topright' })
+
         legend.onAdd = function (map) {
-            var div = pxWidget.L.DomUtil.create('div', 'info leaflet-legend')
-            var limits = choroplethLayer.options.limits;
+            const div = pxWidget.L.DomUtil.create('div', 'info legend');
+            const grades = choroplethLayer.options.limits;
             var colors = choroplethLayer.options.colors;
-            var labels = [];
+            var partitions = [];
 
-            if (pxWidget.map.values[id][0].every(element => element === null) == true) {
-                // Add min & max
-                div.innerHTML = '<div class="labels"><div class="min">' + 0 + '</div> \
- <div class="max">' + 0 + '</div></div>'
-            }
-            else {
-                // Add min & max
-                div.innerHTML = '<div class="labels"><div class="min">' + pxWidget.formatNumber(Math.floor(limits[0])) + '</div> \
-   <div class="max">' + pxWidget.formatNumber(Math.ceil(limits[limits.length - 1])) + '</div></div>'
-            }
+            pxWidget.jQuery.each(grades, function (index, value) {
+                if (index == 0) {
+                    partitions.push(
+                        {
+                            "start": value < 0 ? "(" + pxWidget.formatNumber(Math.ceil(value)) + ")" : pxWidget.formatNumber(Math.ceil(value)),
+                            "end": null,
+                            "colour": colors[index]
+                        }
+                    )
+                }
+                else {
+                    partitions.push(
+                        {
+                            "start": grades[index - 1] + 1 < 0 ? "(" + pxWidget.formatNumber(Math.ceil(grades[index - 1] + 1)) + ")" : pxWidget.formatNumber(Math.ceil(grades[index - 1] + 1)),
+                            "end": value < 0 ? "(" + pxWidget.formatNumber(Math.ceil(value)) + ")" : pxWidget.formatNumber(Math.ceil(value)),
+                            "colour": colors[index]
+                        }
+                    )
+                }
+            });
+            const labels = [];
 
+            pxWidget.jQuery.each(partitions, function (index, value) {
 
+                labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
+                    + '<span data-colour="' + value.colour + '">' + value.start
+                    + (value.end ? ' - ' + value.end : "")
+                    + '</span>'
+                );
 
+            });
 
-            limits.forEach(function (limit, index) {
-                labels.push('<li style="background-color: ' + colors[index] + '"></li>')
-            })
-
-            div.innerHTML += '<ul>' + labels.join('') + '</ul>'
-            return div
+            div.innerHTML = labels.join('<br>');
+            return div;
         }
         legend.addTo(map);
     };
@@ -344,7 +364,7 @@ pxWidget.map.compile = function (id) {
     pxWidget.map.jsonstat[id] = pxWidget.draw.params[id].data.datasets[0].api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.datasets[0].api.response) : null;
 
     if (pxWidget.map.jsonstat[id] && pxWidget.map.jsonstat[id].length) {
-        if (typeof pxWidget.draw.params[id].options.geojson === 'object') {
+        if (pxWidget.draw.params[id].options.geojson && typeof pxWidget.draw.params[id].options.geojson === 'object') {
             onSuccess(pxWidget.draw.params[id].options.geojson);
         }
         else {
@@ -462,7 +482,8 @@ pxWidget.map.addValues = function (id) {
     var geoDimension = pxWidget.map.jsonstat[id].Dimension(mapToDisplayId);
     //remove features from geoJSON that are not in the classification
     pxWidget.map.geojson[id].features = pxWidget.jQuery.grep(pxWidget.map.geojson[id].features, function (el, i) {
-        if (pxWidget.jQuery.inArray(el.properties.code, geoDimension.id) == -1) {
+        var identifier = pxWidget.draw.params[id].options.identifier ? el.properties[pxWidget.draw.params[id].options.identifier] : el.properties.code;
+        if (pxWidget.jQuery.inArray(identifier, geoDimension.id) == -1) {
             return false;// feature not in classification so remove
         }
         return true; // keep the element in the array
@@ -470,8 +491,8 @@ pxWidget.map.addValues = function (id) {
     pxWidget.map.values[id] = []
     var allValues = [];
     pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, feature) {
-
-        var guid = feature.properties.code;
+        var identifier = pxWidget.draw.params[id].options.identifier ? feature.properties[pxWidget.draw.params[id].options.identifier] : feature.properties.code
+        var guid = identifier;
 
         dataQueryObj[mapToDisplayId] = guid;
         var featureValue = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
