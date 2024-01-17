@@ -66,8 +66,9 @@ The parent outer function must be async
     var heatmapData = null;
     var config = {
         valueProperty: 'value',
-        scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
-        steps: 5,
+        scale: pxWidget.map.geojson[id].features.length > 1 ? ['antiquewhite', pxWidget.draw.params[id].colorScale] : null,
+        colors: pxWidget.map.geojson[id].features.length == 1 ? ['#ff0000'] : null,
+        steps: pxWidget.map.geojson[id].features.length >= 5 ? 5 : pxWidget.map.geojson[id].features.length,
         style: {
             color: '#6d7878',
             weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
@@ -244,51 +245,73 @@ heatmapData = {
     });
 
     if (choroplethLayer) {
-        // Add legend
-        var legend = pxWidget.L.control({ position: 'topright' })
 
-        legend.onAdd = function (map) {
-            const div = pxWidget.L.DomUtil.create('div', 'info legend');
-            const grades = choroplethLayer.options.limits;
-            var colors = choroplethLayer.options.colors;
-            var partitions = [];
+        //check for all nulls, no legend then
+        if (!pxWidget.map.values[id][0].every(element => element === null)) {
 
-            pxWidget.jQuery.each(grades, function (index, value) {
-                if (index == 0) {
+            // Add legend
+            var legend = pxWidget.L.control({ position: 'topright' })
+
+            legend.onAdd = function (map) {
+                const div = pxWidget.L.DomUtil.create('div', 'info legend');
+                const grades = choroplethLayer.options.limits;
+                var colors = choroplethLayer.options.colors;
+                var partitions = [];
+                var decimal = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(pxWidget.map.geojson[id].features[0].properties.statistic).unit.decimals;
+                var startItterator = Math.pow(1, decimal) / 10;
+                //if one area, simple legend
+                if (pxWidget.map.geojson[id].features.length == 1) {
                     partitions.push(
                         {
-                            "start": value < 0 ? "(" + pxWidget.formatNumber(Math.ceil(value)) + ")" : pxWidget.formatNumber(Math.ceil(value)),
+                            "start": grades[0] < 0 ? "(" + pxWidget.formatNumber(grades[0], decimal) + ")" : pxWidget.formatNumber(grades[0], decimal),
                             "end": null,
-                            "colour": colors[index]
+                            "colour": colors[0]
                         }
                     )
                 }
                 else {
-                    partitions.push(
-                        {
-                            "start": grades[index - 1] + 1 < 0 ? "(" + pxWidget.formatNumber(Math.ceil(grades[index - 1] + 1)) + ")" : pxWidget.formatNumber(Math.ceil(grades[index - 1] + 1)),
-                            "end": value < 0 ? "(" + pxWidget.formatNumber(Math.ceil(value)) + ")" : pxWidget.formatNumber(Math.ceil(value)),
-                            "colour": colors[index]
+                    pxWidget.jQuery.each(grades, function (index, value) {
+                        if (index == 0) {
+                            partitions.push(
+                                {
+                                    "start": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
+                                    "end": null,
+                                    "colour": colors[index]
+                                }
+                            )
                         }
-                    )
+                        else {
+                            partitions.push(
+                                {
+                                    "start": grades[index - 1] + startItterator < 0 ? "(" + pxWidget.formatNumber(grades[index - 1] + startItterator, decimal) + ")" : pxWidget.formatNumber(grades[index - 1] + startItterator, decimal),
+                                    "end": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
+                                    "colour": colors[index]
+                                }
+                            )
+                        }
+                    });
                 }
-            });
-            const labels = [];
 
-            pxWidget.jQuery.each(partitions, function (index, value) {
+                const labels = [];
 
-                labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
-                    + '<span data-colour="' + value.colour + '">' + value.start
-                    + (value.end ? ' - ' + value.end : "")
-                    + '</span>'
-                );
+                pxWidget.jQuery.each(partitions, function (index, value) {
 
-            });
+                    labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
+                        + '<span data-colour="' + value.colour + '">' + value.start
+                        + (value.end ? ' - ' + value.end : "")
+                        + '</span>'
+                    );
 
-            div.innerHTML = labels.join('<br>');
-            return div;
+                });
+
+                div.innerHTML = labels.join('<br>');
+                return div;
+            }
+            legend.addTo(map);
         }
-        legend.addTo(map);
+
+
+
     };
 
     // Run optional callback at last
