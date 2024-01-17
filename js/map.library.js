@@ -257,8 +257,15 @@ heatmapData = {
                 const grades = choroplethLayer.options.limits;
                 var colors = choroplethLayer.options.colors;
                 var partitions = [];
+                var startItterator = null;
                 var decimal = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(pxWidget.map.geojson[id].features[0].properties.statistic).unit.decimals;
-                var startItterator = Math.pow(1, decimal) / 10;
+                if (decimal == 0) {
+                    startItterator = 1;
+                }
+                else {
+                    startItterator = Math.pow(1, decimal) / 10;
+                }
+
                 //if one area, simple legend
                 if (pxWidget.map.geojson[id].features.length == 1) {
                     partitions.push(
