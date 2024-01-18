@@ -64,6 +64,7 @@ The parent outer function must be async
     var choroplethLayer = null;
     var heatmapLayer = null;
     var heatmapData = null;
+    var coloursUsed = [];
     var config = {
         valueProperty: 'value',
         scale: pxWidget.map.geojson[id].features.length > 1 ? ['antiquewhite', pxWidget.draw.params[id].colorScale] : null,
@@ -75,7 +76,7 @@ The parent outer function must be async
             fillOpacity: 0.6
         },
         onEachFeature: function (feature, layer) {
-
+            coloursUsed.push(layer.options.fillColor);
             var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
             var value = null;
             var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
@@ -302,13 +303,15 @@ heatmapData = {
                 const labels = [];
 
                 pxWidget.jQuery.each(partitions, function (index, value) {
-
-                    labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
-                        + '<span data-colour="' + value.colour + '">' + value.start
-                        + (value.end ? ' - ' + value.end : "")
-                        + '</span>'
-                    );
-
+                    //only use the partition if the colour has been applied to a feature
+                    //k-means can have duplicate ranges with redundant colours
+                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) != -1) {
+                        labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
+                            + '<span data-colour="' + value.colour + '">' + value.start
+                            + (value.end ? ' - ' + value.end : "")
+                            + '</span>'
+                        );
+                    }
                 });
 
                 div.innerHTML = labels.join('<br>');
