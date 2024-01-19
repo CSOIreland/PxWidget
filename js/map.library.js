@@ -122,6 +122,11 @@ The parent outer function must be async
     pxWidget.jQuery.extend(true, config, pxWidget.draw.params[id].options);
 
     if (geometryType == "MultiPolygon" || geometryType == "Polygon") {
+        if (pxWidget.map.values[id][0].every(element => element === null) && config.mode == "k") {
+            //k-mode can't work with all nulls so force qualtile so at least the map will render, no values so mode is redundant
+            config.mode = "q"
+        }
+
         choroplethLayer = pxWidget.L.choropleth(pxWidget.map.geojson[id], config);
     }
     else if (geometryType == "Point") {
