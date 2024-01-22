@@ -15,14 +15,17 @@ pxWidget.jQuery.ajaxPrefilter(function (options, originalOptions, jqXHR) {
 });
 
 pxWidget.config = {
-    "baseMap": {
-        "leaflet": [
-            {
-                "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-                "options": {
-                    "attribution": "Tiles &copy; Esri"
+    "map": {
+        "baseMap": {
+            "leaflet": [
+                {
+                    "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+                    "options": {
+                        "attribution": "Tiles &copy; Esri"
+                    }
                 }
-            }
-        ]
+            ]
+        },
+        "steps": 5
     }
 };

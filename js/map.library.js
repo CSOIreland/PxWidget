@@ -67,9 +67,9 @@ The parent outer function must be async
     var coloursUsed = [];
     var config = {
         valueProperty: 'value',
-        scale: pxWidget.map.geojson[id].features.length > 1 ? ['antiquewhite', pxWidget.draw.params[id].colorScale] : null,
-        colors: pxWidget.map.geojson[id].features.length == 1 ? ['#ff0000'] : null,
-        steps: pxWidget.map.geojson[id].features.length >= 5 ? 5 : pxWidget.map.geojson[id].features.length,
+        scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
+        colors: pxWidget.map.values[id][0].length == 1 ? [pxWidget.draw.params[id].colorScale] : null,
+        steps: pxWidget.map.values[id][0].length >= pxWidget.config.map.steps ? pxWidget.config.map.steps : 4, //TODO move 5 to constant min/max
         style: {
             color: '#6d7878',
             weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
@@ -225,7 +225,7 @@ heatmapData = {
         });
     }
     else {
-        pxWidget.jQuery.each(pxWidget.config.baseMap.leaflet, function (index, value) {
+        pxWidget.jQuery.each(pxWidget.config.map.baseMap.leaflet, function (index, value) {
             pxWidget.L.tileLayer(value.url, value.options).addTo(map);
         });
     }
@@ -273,35 +273,49 @@ heatmapData = {
                 }
 
                 //if one area, simple legend
-                if (pxWidget.map.geojson[id].features.length == 1) {
-                    partitions.push(
-                        {
-                            "start": grades[0] < 0 ? "(" + pxWidget.formatNumber(grades[0], decimal) + ")" : pxWidget.formatNumber(grades[0], decimal),
-                            "end": null,
-                            "colour": colors[0]
-                        }
-                    )
+                if (pxWidget.map.values[id][0].length == 1) {
+                    if (grades[0]) {
+                        partitions.push(
+                            {
+                                "start": grades[0] < 0 ? "(" + pxWidget.formatNumber(grades[0], decimal) + ")" : pxWidget.formatNumber(grades[0], decimal),
+                                "end": null,
+                                "colour": colors[0]
+                            }
+                        )
+                    }
+
                 }
                 else {
                     pxWidget.jQuery.each(grades, function (index, value) {
-                        if (index == 0) {
-                            partitions.push(
-                                {
-                                    "start": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
-                                    "end": null,
-                                    "colour": colors[index]
+                        if (value) {
+                            if (index == 0) {
+                                partitions.push(
+                                    {
+                                        "start": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
+                                        "end": null,
+                                        "colour": colors[index]
+                                    }
+                                )
+                            }
+                            else {
+                                //check that previous grade is actually a number, if not go back one more
+                                var grade;
+                                if (isNaN(grades[index - 1])) {
+                                    grade = grades[index - 2];
                                 }
-                            )
-                        }
-                        else {
-                            partitions.push(
-                                {
-                                    "start": grades[index - 1] + startItterator < 0 ? "(" + pxWidget.formatNumber(grades[index - 1] + startItterator, decimal) + ")" : pxWidget.formatNumber(grades[index - 1] + startItterator, decimal),
-                                    "end": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
-                                    "colour": colors[index]
+                                else {
+                                    grade = grades[index - 1];
                                 }
-                            )
+                                partitions.push(
+                                    {
+                                        "start": grade + startItterator < 0 ? "(" + pxWidget.formatNumber(grade + startItterator, decimal) + ")" : pxWidget.formatNumber(grade + startItterator, decimal),
+                                        "end": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
+                                        "colour": colors[index]
+                                    }
+                                )
+                            }
                         }
+
                     });
                 }
 
@@ -310,7 +324,7 @@ heatmapData = {
                 pxWidget.jQuery.each(partitions, function (index, value) {
                     //only use the partition if the colour has been applied to a feature
                     //k-means can have duplicate ranges with redundant colours
-                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) != -1) {
+                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) != -1 && config.mode == "k") {
                         labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
                             + '<span data-colour="' + value.colour + '">' + value.start
                             + (value.end ? ' - ' + value.end : "")
