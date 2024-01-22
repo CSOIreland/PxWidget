@@ -324,7 +324,10 @@ heatmapData = {
                 pxWidget.jQuery.each(partitions, function (index, value) {
                     //only use the partition if the colour has been applied to a feature
                     //k-means can have duplicate ranges with redundant colours
-                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) != -1 && config.mode == "k") {
+                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) == -1 && config.mode == "k") {
+                        //skip this partition if it's k-means and colour not used
+                    }
+                    else {
                         labels.push('<i style="background: ' + value.colour + '; opacity: 0.6"></i>'
                             + '<span data-colour="' + value.colour + '">' + value.start
                             + (value.end ? ' - ' + value.end : "")
