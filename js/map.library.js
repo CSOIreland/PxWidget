@@ -287,7 +287,7 @@ heatmapData = {
                 }
                 else {
                     pxWidget.jQuery.each(grades, function (index, value) {
-                        if (value) {
+                        if (typeof value === 'number') {
                             if (index == 0) {
                                 partitions.push(
                                     {
