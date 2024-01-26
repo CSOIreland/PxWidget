@@ -80,7 +80,7 @@ The parent outer function must be async
             var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
             var value = null;
             var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
-            if (!feature.properties.value) {
+            if (typeof feature.properties.value != 'number') {
                 layer.setStyle({
                     "fill": false
                 })
@@ -274,7 +274,7 @@ heatmapData = {
 
                 //if one area, simple legend
                 if (pxWidget.map.values[id][0].length == 1) {
-                    if (grades[0]) {
+                    if (typeof grades[0] === 'number') {
                         partitions.push(
                             {
                                 "start": grades[0] < 0 ? "(" + pxWidget.formatNumber(grades[0], decimal) + ")" : pxWidget.formatNumber(grades[0], decimal),
