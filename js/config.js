@@ -26,6 +26,12 @@ pxWidget.config = {
                 }
             ]
         },
-        "steps": 5
+        "choroplethMap": {
+            "steps": 5
+        },
+        "pointMap": {
+            "minRadius": 3,
+            "maxRadius": 60
+        }
     }
 };

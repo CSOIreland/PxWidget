@@ -167,11 +167,12 @@ pxWidget.chart.draw = function (id) {
         var decimal = data.datasets[tooltipItem.datasetIndex].decimal[tooltipItem.index] || null;
 
         value = pxWidget.formatNumber(value, decimal);
-        if (percentage) {
-            label += percentage.toFixed(2) + "% ";
-        }
 
-        label += "(" + value + " " + unit + ")";
+        label += value + " (" + unit + ")";
+        //show calculated % after value for pie/donut
+        if (percentage) {
+            label += " " + percentage.toFixed(2) + "%";
+        }
         return label;
     };
 
@@ -404,7 +405,7 @@ pxWidget.chart.ajax.readDataset = function (id) {
 
 pxWidget.chart.callback.readMetadataOnSuccess = function (response, callbackParams) {
     pxWidget.draw.params[callbackParams.id].metadata.api.response = response;
-    var metadataData = new pxWidget.JSONstat.jsonstat(response);
+    var metadataData = new pxWidget.JSONstat(response);
     //update fluid time before fetching datasets
     pxWidget.jQuery.each(pxWidget.draw.params[callbackParams.id].data.datasets, function (index, value) {
         if (value.fluidTime) {
@@ -443,7 +444,7 @@ pxWidget.chart.compile = function (id) {
     }
 
     //parse JSONstat meta data
-    var metadataData = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
+    var metadataData = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat(pxWidget.draw.params[id].metadata.api.response) : null;
     if (metadataData && metadataData.length) {
         //get xAxis labels
         var xAxisLabels = metadataData.Dimension(Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]).Category();
@@ -486,7 +487,7 @@ pxWidget.chart.compile = function (id) {
         pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (index, value) {
             value.unit = [];
 
-            var data = value.api.response ? new pxWidget.JSONstat.jsonstat(value.api.response) : null;
+            var data = value.api.response ? new pxWidget.JSONstat(value.api.response) : null;
             if (data && data.length) {
                 var xAxisDimensionCodes = pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]].length
                     ? pxWidget.draw.params[id].metadata.xAxis[Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]]

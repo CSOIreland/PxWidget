@@ -9,7 +9,7 @@ pxWidget.noConflict = {};
 
 // jQuery 3.X - https://github.com/jquery/jquery/
 // Native noConflict object
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/jquery/jquery@3.4.1/dist/jquery.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js');
 
 // MomentJS - github.com/moment/moment/ -->
 pxWidget.noConflict.moment = window.moment ? window.moment : null;
@@ -17,18 +17,18 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/moment/mo
 
 // Datatables - https://datatables.net/ powered by ClooudFlare
 pxWidget.noConflict.DataTable = window.DataTable ? window.DataTable : null;
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/DataTables/js/jquery.dataTables.min.js');
 // Datatables - Extension - Responsive -->
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/Responsive/js/dataTables.responsive.min.js');
 // Datatables - Sorting - Datetime Moment -->
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/plug-ins/1.10.20/sorting/datetime-moment.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/Sorting/datetime-moment.min.js');
 // Datatables - Sorting - Natural -->
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/plug-ins/1.10.20/sorting/natural.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/Sorting/natural.min.js');
 // Datatables - Exporting -->
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.min.js');
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.flash.min.js');
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.html5.min.js');
-pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.print.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/Buttons/js/dataTables.buttons.min.js');
+//pxWidget.load(window, document, 'script', 'https://cdn.datatables.net/buttons/1.6.2/js/buttons.flash.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/Buttons/js/buttons.html5.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/Datatables@1.13.4b3/Buttons/js/buttons.print.min.js');
 
 // ChartJS - https://github.com/chartjs/Chart.js/
 pxWidget.noConflict.Chart = window.Chart ? window.Chart : null;
@@ -40,11 +40,11 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/nagix/cha
 
 // Leaflet - https://github.com/Leaflet/Leaflet
 pxWidget.noConflict.L = window.L ? window.L : null;
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/leaflet/leaflet@v1.7.1/dist/leaflet.min.js');
+pxWidget.load(window, document, 'script', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/Esri/esri-leaflet@v3.0.3/dist/esri-leaflet.min.js');
 
 // Leaflet CSS
-pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/leaflet/leaflet@v1.7.1/dist/leaflet.min.css');
+pxWidget.load(window, document, 'link', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
 //Leaflet Choropleth - https://github.com/timwis/leaflet-choropleth
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/timwis/leaflet-choropleth@v1.1.2/dist/choropleth.min.js');
@@ -63,7 +63,7 @@ pxWidget.load(window, document, 'script', 'https://unpkg.com/@turf/turf@6.3.0/tu
 
 // JSON-Stat - https://github.com/badosa/JSON-stat/
 pxWidget.noConflict.JSONstat = window.JSONstat ? window.JSONstat : null;
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/badosa/JSON-stat@v0.13.3/json-stat.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/npm/jsonstat-toolkit@1.4.2');
 
 // pxWidget CSS
 pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/index.css' : 'css/index.min.css'));

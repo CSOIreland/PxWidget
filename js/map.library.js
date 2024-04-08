@@ -10,6 +10,14 @@ pxWidget.map.callback = {};
 pxWidget.map.geojson = [];
 pxWidget.map.jsonstat = [];
 pxWidget.map.values = [];
+pxWidget.map.minValue = [];
+pxWidget.map.maxValue = [];
+
+const geometryTypeMultiPolygon = "MultiPolygon";
+const geometryTypePolygon = "Polygon";
+const geometryTypePoint = "Point";
+
+
 
 
 /**
@@ -61,116 +69,167 @@ The parent outer function must be async
 
     //find out if it's polygon/multipolygon or points
     var geometryType = pxWidget.map.geojson[id].features[0].geometry.type;
+    pxWidget.draw.params[id].options.geometryType = geometryType;
     var choroplethLayer = null;
-    var heatmapLayer = null;
-    var heatmapData = null;
+    var pointLayer = null;
+    var markerLayer = null;
     var coloursUsed = [];
-    var config = {
-        valueProperty: 'value',
-        scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
-        colors: pxWidget.map.values[id][0].length == 1 ? [pxWidget.draw.params[id].colorScale] : null,
-        steps: pxWidget.map.values[id][0].length >= pxWidget.config.map.steps ? pxWidget.config.map.steps : 4, //TODO move 5 to constant min/max
-        style: {
-            color: '#6d7878',
-            weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
-            fillOpacity: 0.6
-        },
-        onEachFeature: function (feature, layer) {
-            coloursUsed.push(layer.options.fillColor);
-            var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
-            var value = null;
-            var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
-            if (typeof feature.properties.value != 'number') {
-                layer.setStyle({
-                    "fill": false
-                })
+
+    if (geometryType == geometryTypeMultiPolygon || geometryType == geometryTypePolygon) {
+
+        var polygonConfig = {
+            valueProperty: 'value',
+            scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
+            colors: pxWidget.map.values[id][0].length == 1 ? [pxWidget.draw.params[id].colorScale] : null,
+            steps: pxWidget.map.values[id][0].length >= pxWidget.config.map.choroplethMap.steps ? pxWidget.config.map.choroplethMap.steps : 4, //TODO move 5 to constant min/max
+            style: {
+                color: '#6d7878',
+                weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
+                fillOpacity: 0.6
+            },
+            onEachFeature: function (feature, layer) {
+                coloursUsed.push(layer.options.fillColor);
+                var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
+                var value = null;
+                var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
+                if (typeof feature.properties.value != 'number') {
+                    layer.setStyle({
+                        "fill": false
+                    })
+                }
+
+                value = feature.properties.value || feature.properties.value === 0 ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : pxWidget.draw.params[id].defaultContent;
+
+                layer.bindPopup(
+                    tooltipTitle +
+                    feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
+                    value + '</b> (' + feature.properties.unit + ')');
+
+                layer.on('mouseover', function (e) {
+                    if (e.sourceTarget.feature.properties.value != null) {
+                        pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "bold");
+                    }
+
+                    var popupAnchor = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    }
+
+                    layer.setStyle({
+                        "weight": 2
+                    })
+                    this.openPopup(popupAnchor);
+
+                });
+                layer.on('mouseout', function (e) {
+                    pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "normal");
+                    layer.setStyle({
+                        "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
+                    });
+
+                    var popupAnchor = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    }
+
+                    this.closePopup(popupAnchor);
+
+                });
+            }
+        }
+        pxWidget.jQuery.extend(true, polygonConfig, pxWidget.draw.params[id].options);
+
+        if (pxWidget.map.values[id][0].every(element => element === null) && polygonConfig.mode == "k") {
+            //k-mode can't work with all nulls so force qualtile so at least the map will render, no values so mode is redundant
+            polygonConfig.mode = "q"
+        }
+
+        choroplethLayer = pxWidget.L.choropleth(pxWidget.map.geojson[id], polygonConfig);
+    }
+    else if (geometryType == geometryTypePoint) {
+        var pointConfig = {
+            onEachFeature: function (feature, layer) {
+
+                var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
+                var value = null;
+                var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
+
+                value = feature.properties.value || feature.properties.value === 0 ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : pxWidget.draw.params[id].defaultContent;
+
+                layer.bindPopup(
+                    tooltipTitle +
+                    feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
+                    value + '</b> (' + feature.properties.unit + ')');
+
+                layer.on('mouseover', function (e) {
+                    var popupAnchor = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    }
+                    this.openPopup(popupAnchor);
+                });
+
+                layer.on('mouseout', function (e) {
+                    var popupAnchor = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    }
+                    this.closePopup(popupAnchor);
+                });
+
+            },
+
+            pointToLayer: function (feature, latlng) {
+                var jump = (pxWidget.map.maxValue[id] - pxWidget.map.minValue[id]) / (pxWidget.config.map.pointMap.maxRadius - pxWidget.config.map.pointMap.minRadius);
+                var radiusValue = Math.round(((feature.properties.value - pxWidget.map.minValue[id]) / jump) + pxWidget.config.map.pointMap.minRadius);
+                return pxWidget.L.circleMarker(latlng, {
+                    radius: feature.properties.value === null || feature.properties.value < 0 ? pxWidget.config.map.pointMap.minRadius : radiusValue + pxWidget.config.map.pointMap.minRadius,
+                    fillColor: feature.properties.value === null ? "#b3b3b3" : pxWidget.draw.params[id].colorScale,
+                    color: feature.properties.value === null ? "#b3b3b3" : pxWidget.draw.params[id].colorScale,
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.6
+                });
             }
 
-            value = feature.properties.value || feature.properties.value === 0 ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : pxWidget.draw.params[id].defaultContent;
 
-            layer.bindPopup(
-                tooltipTitle +
-                feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
-                value + '</b> (' + feature.properties.unit + ')');
-
-            layer.on('mouseover', function (e) {
-                if (e.sourceTarget.feature.properties.value != null) {
-                    pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "bold");
-                }
-
-                var popupAnchor = {
-                    lat: e.latlng.lat,
-                    lng: e.latlng.lng
-                }
-
-                layer.setStyle({
-                    "weight": 2
-                })
-                this.openPopup(popupAnchor);
-                //  this.openPopup();
-            });
-            layer.on('mouseout', function (e) {
-                pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "normal");
-                layer.setStyle({
-                    "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
-                })
-            });
-        }
-    };
-    //merge custom config
-
-    pxWidget.jQuery.extend(true, config, pxWidget.draw.params[id].options);
-
-    if (geometryType == "MultiPolygon" || geometryType == "Polygon") {
-        if (pxWidget.map.values[id][0].every(element => element === null) && config.mode == "k") {
-            //k-mode can't work with all nulls so force qualtile so at least the map will render, no values so mode is redundant
-            config.mode = "q"
-        }
-
-        choroplethLayer = pxWidget.L.choropleth(pxWidget.map.geojson[id], config);
-    }
-    else if (geometryType == "Point") {
-
-        /*******************************************************************************
-#TODO: Need to find a good way to display point data on a map
-This prototype is based on https://www.patrick-wied.at/static/heatmapjs/plugin-leaflet-layer.html but not fully suitable for production yet 
-heatmapData = {
-            max: pxWidget.map.geojson[id].features.length,
-            data: []
         };
+        pxWidget.jQuery.extend(true, pointConfig, pxWidget.draw.params[id].options);
+        pointLayer = pxWidget.L.geoJson(pxWidget.map.geojson[id], pointConfig);
 
-        pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, value) {
-            heatmapData.data.push(
-                {
-                    lat: value.geometry.coordinates[1],
-                    lng: value.geometry.coordinates[0],
-                    value: value.properties.value
-                }
-            )
-        });
+        //add markers to point map
+        var markerConfig = {
+            onEachFeature: function (feature, layer) {
 
-        heatmapLayer = new HeatmapOverlay({
-            // radius should be small ONLY if scaleRadius is true (or small radius is intended)
-            // if scaleRadius is false it will be the constant radius used in pixels
-            "radius": .2,
-            "maxOpacity": .8,
-            // scales the radius based on map zoom
-            "scaleRadius": true,
-            // if set to false the heatmap uses the global maximum for colorization
-            // if activated: uses the data maximum within the current map boundaries
-            //   (there will always be a red spot with useLocalExtremas true)
-            "useLocalExtrema": true,
-            // which field name in your data represents the latitude - default "lat"
-            latField: 'lat',
-            // which field name in your data represents the longitude - default "lng"
-            lngField: 'lng',
-            // which field name in your data represents the data value - default "value"
-            valueField: 'value'
-        });
+                var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
+                var value = null;
+                var tooltipTitle = pxWidget.draw.params[id].tooltipTitle ? "<b>" + pxWidget.draw.params[id].tooltipTitle + "</b><br>" : "";
 
-*******************************************************************************/
+                value = feature.properties.value || feature.properties.value === 0 ? pxWidget.formatNumber(feature.properties.value.toLocaleString(), decimal) : pxWidget.draw.params[id].defaultContent;
 
+                layer.bindPopup(
+                    tooltipTitle +
+                    feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
+                    value + '</b> (' + feature.properties.unit + ')');
 
+                layer.on('mouseover', function (e) {
+                    var popupAnchor = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    }
+                    this.openPopup(popupAnchor);
+                });
+
+                layer.on('mouseout', function (e) {
+                    var popupAnchor = {
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    }
+                    this.closePopup(popupAnchor);
+                });
+            }
+        };
+        markerLayer = pxWidget.L.geoJson(pxWidget.map.geojson[id], markerConfig);
     };
 
     //find the edges of the geojson to set the max bounds, add extra so user can always see some of the geoJson
@@ -187,6 +246,18 @@ heatmapData = {
     };
     //remove div height for smooth rendering
     pxWidget.jQuery('#' + id).height("auto");
+
+    //add layers
+    var layers = [];
+    if (choroplethLayer) {
+        layers.push(choroplethLayer)
+    }
+    if (markerLayer) {
+        layers.push(markerLayer)
+    }
+    if (pointLayer) {
+        layers.push(pointLayer)
+    }
     var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
         zoomSnap: 0.1,
         zoomDelta: 0.5,
@@ -199,12 +270,29 @@ heatmapData = {
         },
         tap: false, // ref https://github.com/Leaflet/Leaflet/issues/7255
         renderer: pxWidget.L.canvas(),
-        layers: [choroplethLayer || heatmapLayer],
+        layers: layers,
         maxBounds: [
             [enveloped.bbox[1] + (height / 2), enveloped.bbox[2] - (width / 2)],
             [enveloped.bbox[3] - (height / 2), enveloped.bbox[0] + (width / 2)]
         ]
     });
+
+    //only show markers for points at zoomed in level
+    if (geometryType == geometryTypePoint) {
+        map.on("zoomend", function () {
+            var zoomlevel = map.getZoom();
+            if (zoomlevel < 10) {
+                if (map.hasLayer(markerLayer)) {
+                    map.removeLayer(markerLayer);
+                }
+            }
+            if (zoomlevel >= 10) {
+                if (!map.hasLayer(markerLayer)) {
+                    map.addLayer(markerLayer);
+                }
+            }
+        });
+    }
     var dateUpdated = "";
     if (pxWidget.map.jsonstat[id].updated) {
         dateUpdated = pxWidget.moment(pxWidget.map.jsonstat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(pxWidget.map.jsonstat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
@@ -213,7 +301,12 @@ heatmapData = {
     localAttribution += pxWidget.draw.params[id].link ? " <a target='_blank' href='" + pxWidget.draw.params[id].link + "'>" + pxWidget.draw.params[id].link + "</a> <br>" : "<br>";
     localAttribution += pxWidget.draw.params[id].copyright ? '&copy; ' + pxWidget.map.jsonstat[id].extension.copyright.name : "";
 
-    var attribution = pxWidget.L.control.attribution();
+    var attribution = pxWidget.L.control.attribution(
+        {
+            prefix: false
+        }
+    );
+
     attribution.addAttribution(localAttribution);
     attribution.addTo(map);
 
@@ -237,11 +330,6 @@ heatmapData = {
         });
     }
 
-
-
-    if (heatmapData) {
-        heatmapLayer.setData(heatmapData);
-    }
     var allFeatures = pxWidget.L.geoJson(pxWidget.map.geojson[id]);
     map.fitBounds(allFeatures.getBounds());
     map.setMinZoom(map.getZoom());
@@ -251,7 +339,6 @@ heatmapData = {
     });
 
     if (choroplethLayer) {
-
         //check for all nulls, no legend then
         if (!pxWidget.map.values[id][0].every(element => element === null)) {
 
@@ -416,7 +503,7 @@ pxWidget.map.compile = function (id) {
     var isValidData = true;
 
     //store jsonStat for later use
-    pxWidget.map.jsonstat[id] = pxWidget.draw.params[id].data.datasets[0].api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.datasets[0].api.response) : null;
+    pxWidget.map.jsonstat[id] = pxWidget.draw.params[id].data.datasets[0].api.response ? new pxWidget.JSONstat(pxWidget.draw.params[id].data.datasets[0].api.response) : null;
 
     if (pxWidget.map.jsonstat[id] && pxWidget.map.jsonstat[id].length) {
         if (pxWidget.draw.params[id].options.geojson && typeof pxWidget.draw.params[id].options.geojson === 'object') {
@@ -495,7 +582,7 @@ pxWidget.map.callback.readMetadataOnSuccess = function (response, id) {
         pxWidget.draw.error(id, 'pxWidget.map.callback.readMetadataOnSuccess: missing data response');
     } else {
         pxWidget.draw.params[id].metadata.api.response = response;
-        var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
+        var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat(pxWidget.draw.params[id].metadata.api.response) : null;
 
         if (metadataJsonStat && metadataJsonStat.length) {
             //Have metadata now, use metadata to get fluid timepoints are replace in query
@@ -527,7 +614,7 @@ pxWidget.map.callback.readMetadataOnError = function (error, id) {
 pxWidget.map.addValues = function (id) {
     var mapToDisplayId = pxWidget.draw.params[id].mapDimension;
     var dataQueryObj = {};
-    //var data = pxWidget.draw.params[id].data.datasets[0].api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.datasets[0].api.response) : null;
+    //var data = pxWidget.draw.params[id].data.datasets[0].api.response ? new pxWidget.JSONstat(pxWidget.draw.params[id].data.datasets[0].api.response) : null;
 
     pxWidget.jQuery.each(pxWidget.map.jsonstat[id].Dimension(), function (indexDimension, valueDimension) {
         if (pxWidget.map.jsonstat[id].id[indexDimension] != mapToDisplayId) {
@@ -543,9 +630,13 @@ pxWidget.map.addValues = function (id) {
         }
         return true; // keep the element in the array
     });
-    pxWidget.map.values[id] = []
+    pxWidget.map.values[id] = [];
+    pxWidget.map.minValue[id] = null;
+    pxWidget.map.maxValue[id] = null;
+
     var allValues = [];
     pxWidget.jQuery.each(pxWidget.map.geojson[id].features, function (index, feature) {
+
         var identifier = pxWidget.draw.params[id].options.identifier ? feature.properties[pxWidget.draw.params[id].options.identifier] : feature.properties.code
         var guid = identifier;
 
@@ -553,6 +644,23 @@ pxWidget.map.addValues = function (id) {
         var featureValue = pxWidget.map.jsonstat[id].Data(dataQueryObj).value;
         feature.properties.value = featureValue;
         allValues.push(featureValue);
+
+        var featureValueRadius = !featureValue || featureValue < 0 ? 0 : featureValue;
+
+        //initial values will always be the first
+        if (!pxWidget.map.maxValue[id]) {
+            pxWidget.map.minValue[id] = featureValueRadius;
+            pxWidget.map.maxValue[id] = featureValueRadius;
+        }
+
+        if (featureValueRadius > pxWidget.map.maxValue[id]) {
+            pxWidget.map.maxValue[id] = featureValueRadius;
+        }
+
+        if (featureValueRadius < pxWidget.map.minValue[id]) {
+            pxWidget.map.minValue[id] = featureValueRadius;
+        }
+
         feature.properties.statistic = dataQueryObj.STATISTIC;
 
         feature.properties.unit = pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(dataQueryObj.STATISTIC).unit.label;
@@ -567,5 +675,6 @@ pxWidget.map.addValues = function (id) {
         });
         feature.properties.time = pxWidget.map.jsonstat[id].Dimension(timeDimensionCode).Category(dataQueryObj[timeDimensionCode]).label;
     });
+
     pxWidget.map.values[id].push(allValues);
 };

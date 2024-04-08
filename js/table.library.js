@@ -52,7 +52,7 @@ pxWidget.table.draw = function (id) {
     }
 
     // Parse JSON-stat
-    var data = new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.api.response);
+    var data = new pxWidget.JSONstat(pxWidget.draw.params[id].data.api.response);
 
     // Parse data-id to array-of-object
     var jsonTable = data.toTable({
@@ -331,7 +331,7 @@ pxWidget.table.compile = function (id) {
 
     //get datasets data
     pxWidget.table.response = pxWidget.draw.params[id].data.api.response;
-    pxWidget.table.jsonStat = pxWidget.table.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].data.api.response) : null;
+    pxWidget.table.jsonStat = pxWidget.table.response ? new pxWidget.JSONstat(pxWidget.draw.params[id].data.api.response) : null;
 
     if (pxWidget.table.jsonStat && pxWidget.table.jsonStat.length)
         return true;
@@ -418,7 +418,7 @@ pxWidget.table.callback.readMetadataOnSuccess = function (response, id) {
     } else {
         pxWidget.draw.params[id].metadata.api.response = response;
 
-        var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat.jsonstat(pxWidget.draw.params[id].metadata.api.response) : null;
+        var metadataJsonStat = pxWidget.draw.params[id].metadata.api.response ? new pxWidget.JSONstat(pxWidget.draw.params[id].metadata.api.response) : null;
 
         if (metadataJsonStat && metadataJsonStat.length) {
             //Have metadata now, use metadata to get fluid timepoints are replace in query
