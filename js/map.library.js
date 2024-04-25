@@ -411,7 +411,7 @@ The parent outer function must be async
                 pxWidget.jQuery.each(partitions, function (index, value) {
                     //only use the partition if the colour has been applied to a feature
                     //k-means can have duplicate ranges with redundant colours
-                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) == -1 && config.mode == "k") {
+                    if (pxWidget.jQuery.inArray(value.colour, coloursUsed) == -1 && polygonConfig.mode == "k") {
                         //skip this partition if it's k-means and colour not used
                     }
                     else {
