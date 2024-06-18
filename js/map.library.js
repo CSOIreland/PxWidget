@@ -137,8 +137,8 @@ The parent outer function must be async
                 });
             }
         }
-        pxWidget.jQuery.extend(true, polygonConfig, pxWidget.draw.params[id].options);
 
+        pxWidget.jQuery.extend(true, polygonConfig, pxWidget.draw.params[id].options);
         if (pxWidget.map.values[id][0].every(element => element === null) && polygonConfig.mode == "k") {
             //k-mode can't work with all nulls so force qualtile so at least the map will render, no values so mode is redundant
             polygonConfig.mode = "q"
@@ -378,8 +378,8 @@ The parent outer function must be async
                             if (index == 0) {
                                 partitions.push(
                                     {
-                                        "start": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
-                                        "end": null,
+                                        "start": pxWidget.formatNumber(pxWidget.map.minValue[id]),
+                                        "end": value < 0 ? "(" + pxWidget.formatNumber(value, decimal) + ")" : pxWidget.formatNumber(value, decimal),
                                         "colour": colors[index]
                                     }
                                 )

@@ -47,7 +47,7 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/Esri/esri
 pxWidget.load(window, document, 'link', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
 //Leaflet Choropleth - https://github.com/timwis/leaflet-choropleth
-pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/timwis/leaflet-choropleth@v1.1.2/dist/choropleth.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/leaflet-choropleth@v1.1.4b2/dist/choropleth.js');
 
 //Leaflet heatmap - https://github.com/OpenGov/Leaflet.bubble
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatmap.js@v2.0.5/build/heatmap.min.js');
