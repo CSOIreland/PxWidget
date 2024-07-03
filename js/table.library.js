@@ -196,8 +196,9 @@ pxWidget.table.draw = function (id) {
     pxWidget.jQuery.each(tableColumns, function (i, v) {
         if (v.visible !== false) {
             //not definitively hidden, include in export
-            pxWidget.draw.params[id].options.buttons[0].exportOptions.columns.push(i);
-            pxWidget.draw.params[id].options.buttons[1].exportOptions.columns.push(i);
+            pxWidget.jQuery.each(pxWidget.draw.params[id].options.buttons, function (indexButton, button) {
+                button.exportOptions.columns.push(i);
+            });
         }
 
     });

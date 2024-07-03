@@ -408,18 +408,16 @@ pxWidget.chart.callback.readMetadataOnSuccess = function (response, callbackPara
     var metadataData = new pxWidget.JSONstat(response);
     //update fluid time before fetching datasets
     pxWidget.jQuery.each(pxWidget.draw.params[callbackParams.id].data.datasets, function (index, value) {
-        if (value.fluidTime) {
-            if (value.fluidTime.length) {
-                var timeDimensionCode = null;
-                pxWidget.jQuery.each(metadataData.Dimension(), function (indexDimension, valueDimension) {
-                    if (valueDimension.role == "time") {
-                        timeDimensionCode = metadataData.id[indexDimension];
-                        return;
-                    }
-                });
-                var dimensionSize = metadataData.Dimension(timeDimensionCode).id.length;
-                value.api.query.data.params.dimension[timeDimensionCode].category.index = [metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value.fluidTime[0]) - 1]];
-            }
+        if (value.fluidTime && value.fluidTime.length) {
+            var timeDimensionCode = null;
+            pxWidget.jQuery.each(metadataData.Dimension(), function (indexDimension, valueDimension) {
+                if (valueDimension.role == "time") {
+                    timeDimensionCode = metadataData.id[indexDimension];
+                    return;
+                }
+            });
+            var dimensionSize = metadataData.Dimension(timeDimensionCode).id.length;
+            value.api.query.data.params.dimension[timeDimensionCode].category.index = [metadataData.Dimension(timeDimensionCode).id[(dimensionSize - value.fluidTime[0]) - 1]];
         }
     });
 };
@@ -535,7 +533,7 @@ pxWidget.chart.compile = function (id) {
                     if (data.id[dimensionIndex] != Object.keys(pxWidget.draw.params[id].metadata.xAxis)[0]) {
                         if (dimensionValue.role == "time") {
                             //only relevant for fluid time
-                            if (value.fluidTime.length) {
+                            if (value.fluidTime && value.fluidTime.length) {
                                 if ((pxWidget.draw.params[id].type == "pie" || pxWidget.draw.params[id].type == "doughnut" || pxWidget.draw.params[id].type == "polarArea")) {
                                     pxWidget.draw.params[id].options.title.text[pxWidget.draw.params[id].options.title.text.length - 1] = pxWidget.draw.params[id].options.title.text[pxWidget.draw.params[id].options.title.text.length - 1] + " (" + data.Dimension(data.id[dimensionIndex]).Category(dimensionValue.id[0]).label + ")";
                                 }
