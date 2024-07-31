@@ -81,7 +81,7 @@ The parent outer function must be async
             valueProperty: 'value',
             scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
             colors: pxWidget.map.values[id][0].length == 1 ? [pxWidget.draw.params[id].colorScale] : null,
-            steps: pxWidget.map.values[id][0].length >= pxWidget.config.map.choroplethMap.steps ? pxWidget.config.map.choroplethMap.steps : 4, //TODO move 5 to constant min/max
+            steps: pxWidget.map.values[id][0].length >= pxWidget.config.map.choroplethMap.steps ? pxWidget.config.map.choroplethMap.steps : pxWidget.map.values[id][0].length,
             style: {
                 color: '#6d7878',
                 weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
