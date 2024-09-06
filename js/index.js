@@ -57,6 +57,9 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/pa7/heatm
 pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.2.0/Control.FullScreen.min.css');
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/brunob/leaflet.fullscreen@v2.2.0/Control.FullScreen.min.js', null, null, true);
 
+//leaflet-easyPrint https://github.com/rowanwins/leaflet-easyPrint
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/easyPrint.js' : 'js/easyPrint.min.js'));
+
 //Turf js - https://turfjs.org/
 pxWidget.noConflict.turf = window.turf ? window.turf : null;
 pxWidget.load(window, document, 'script', 'https://unpkg.com/@turf/turf@6.3.0/turf.min.js');

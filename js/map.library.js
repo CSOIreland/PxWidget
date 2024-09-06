@@ -4,6 +4,7 @@ PxWidget - Chart - Library
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.map = {};
+pxWidget.map.easyPrint = {};
 pxWidget.map.metadata = {};
 pxWidget.map.ajax = {};
 pxWidget.map.callback = {};
@@ -333,6 +334,13 @@ The parent outer function must be async
     var allFeatures = pxWidget.L.geoJson(pxWidget.map.geojson[id]);
     map.fitBounds(allFeatures.getBounds());
     map.setMinZoom(map.getZoom());
+
+    pxWidget.map.easyPrint = pxWidget.L.easyPrint({
+        hideControlContainer: false,
+        filename: pxWidget.draw.params[id].data.datasets[0].api.response.extension.matrix + "_" + pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'),
+        exportOnly: true,
+        title: pxWidget.draw.params[id].easyPrint ? pxWidget.draw.params[id].easyPrint.title : "Download"
+    }).addTo(map);
 
     map.on('mouseout', function (e) {
         this.closePopup();
