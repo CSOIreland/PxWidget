@@ -15,3 +15,11 @@ pxWidget.jQuery.extend(pxWidget.jQuery.fn.dataTableExt.oSort, {
     return pxWidget.jQuery.fn.dataTableExt.oSort["natural-nohtml-desc"](a, b);
   }
 });
+
+// Define a custom sorting type for sorting time by codes
+pxWidget.jQuery.fn.dataTable.ext.order['custom-sort'] = function (settings, col) {
+  return this.api().column(col, { order: 'index' }).nodes().map(function (td, i) {
+    // Extract and return the value that should be used for sorting
+    return pxWidget.jQuery(td).attr("data-custom-sort");
+  });
+};

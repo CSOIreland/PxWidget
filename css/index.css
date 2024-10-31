@@ -30,27 +30,50 @@
     clear: both;
 }
 
-.pxwidget.map .info { 
-    padding: 6px 8px; 
+.pxwidget.map .info {
+    padding: 6px 8px;
     font-size: 14px;
-    background: white; 
-    background: rgba(255,255,255,0.8); 
-    box-shadow: 0 0 15px rgba(0,0,0,0.2); 
-    border-radius: 5px; 
-} 
-    
+    background: white;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
 
-.pxwidget.map .legend { 
-    text-align: left; 
-    line-height: 18px; 
-    color: #555; 
-} 
 
-.pxwidget.map .legend i { 
-    width: 18px; 
-    height: 18px; 
-    float: left; 
-    margin-right: 8px; 
+.pxwidget.map .legend {
+    text-align: left;
+    line-height: 18px;
+    color: #555;
+}
+
+.pxwidget.map .legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+}
+
+.pxwidget .dataTables_scrollHead,
+.pxwidget .dataTables_scrollBody {
+    padding: 0;
+}
+
+.pxwidget .dataTable thead th {
+    border-top: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: none;
+}
+
+table.table-bordered.dataTable.custom-table th:first-child, table.table-bordered.dataTable.custom-table th:first-child {
+    border-left: none;
+}
+
+.pxwidget .dataTable thead tr:first-child th:first-child {
+    border-left: 1px solid #ddd;
+}
+
+.pxwidget .dataTables_scrollHeadInner {
+    border-bottom: 1px solid #ddd;
 }
 
 
@@ -96,14 +119,14 @@
 
 
 @media print {
-/*  fix issue with multiple blank pages when widget is on the page, only happens for ChartJs 2.9.4, fixed in v3 onwards
+    /*  fix issue with multiple blank pages when widget is on the page, only happens for ChartJs 2.9.4, fixed in v3 onwards
   https://stackoverflow.com/questions/74820718/chart-js-printing-a-webpage-containing-chart-js-canvas-prints-out-hundreds-of
   backward compatibility for old widgets 
   */
-  .pxwidget .chartjs-size-monitor{
-    position: fixed;
-    
-  }
+    .pxwidget .chartjs-size-monitor {
+        position: fixed;
+
+    }
 }
 
 
