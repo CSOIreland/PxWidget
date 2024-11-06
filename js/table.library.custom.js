@@ -414,7 +414,7 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
 
     let timeColumnIndex = pxWidget.draw.params[id].rowFields.indexOf(timeDimensionCode);
 
-    if (timeColumnIndex >= 0) {
+    if (timeColumnIndex >= 0 && !pxWidget.draw.params[id].options.order.length) {
         //sorting of time by code instead of label
         pivotTableOptions.columnDefs.push({
             targets: timeColumnIndex,
