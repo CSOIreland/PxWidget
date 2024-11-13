@@ -277,6 +277,16 @@ pxWidget.chart.draw = function (id) {
     }
     //remove div height for smooth rendering
     pxWidget.jQuery('#' + id).height("auto");
+
+    //limit the number of categories displayed in the chart, usefull for showing top 10 once sort by value is true
+    if (pxWidget.draw.params[id].sort && pxWidget.draw.params[id].maxNumberValues) {
+        pxWidget.jQuery.each(pxWidget.draw.params[id].data.datasets, function (key, value) {
+            value.data = value.data.slice(0, pxWidget.draw.params[id].maxNumberValues);
+        });
+
+        pxWidget.draw.params[id].data.labels = pxWidget.draw.params[id].data.labels.slice(0, pxWidget.draw.params[id].maxNumberValues);
+    }
+
     // Run ChartJS
     var chart = new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
 

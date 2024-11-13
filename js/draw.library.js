@@ -33,6 +33,10 @@ pxWidget.draw.init = function (type, id, params, callback) {
   } else {
     try {
       pxWidget.draw.params[id] = JSON.parse(params);
+      //sanatise params
+      pxWidget.draw.params[id].maxNumberValues = pxWidget.draw.params[id].maxNumberValues ? Math.abs(parseInt(pxWidget.draw.params[id].maxNumberValues)) : null;
+      pxWidget.draw.params[id].sort = pxWidget.draw.params[id].sort ? true : false;
+
     } catch (e) {
       pxWidget.draw.error(id, 'pxWidget.draw.init: invalid Params');
       return;
