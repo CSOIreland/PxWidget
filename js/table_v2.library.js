@@ -4,51 +4,75 @@ PxWidget - Chart - Library
 
 // Init
 var pxWidget = pxWidget || {};
-pxWidget.customTable = {};
-pxWidget.customTable.metadata = {};
-pxWidget.customTable.data = {};
-pxWidget.customTable.ajax = {};
-pxWidget.customTable.callback = {};
-pxWidget.customTable.isCSSloaded = false;
-pxWidget.customTable.jsonStat = [];
-pxWidget.customTable.jsonStatTable = [];
-pxWidget.customTable.dataTable = [];
-
-const valueField = "VALUE";
-const statisticField = "STATISTIC";
+pxWidget.table_v2 = {};
+pxWidget.table_v2.metadata = {};
+pxWidget.table_v2.data = {};
+pxWidget.table_v2.ajax = {};
+pxWidget.table_v2.callback = {};
+pxWidget.table_v2.isCSSloaded = false;
+pxWidget.table_v2.jsonStat = [];
+pxWidget.table_v2.jsonStatTable = [];
+pxWidget.table_v2.dataTable = [];
 
 
 /**
  * Draw a pxWidget Table
  * @param {*} id 
  */
-pxWidget.customTable.draw = function (id) {
+pxWidget.table_v2.draw = function (id) {
 
     // Store it for the data sort plugin
     // This implies that every widget is sharing the same defaultContent
-    pxWidget.customTable.defaultContent = pxWidget.draw.params[id].defaultContent;
+    pxWidget.table_v2.defaultContent = pxWidget.draw.params[id].defaultContent;
     // Init & Spinner
     pxWidget.draw.spinner(id);
-    if (!pxWidget.customTable.metadata.compile(id)) {
+    if (!pxWidget.table_v2.metadata.compile(id)) {
         return;
     }
 
-    if (!pxWidget.customTable.data.compile(id)) {
+    if (!pxWidget.table_v2.data.compile(id)) {
         return;
     }
-    var jsonStat = new pxWidget.JSONstat(pxWidget.draw.params[id].data.api.response);
-    pxWidget.customTable.jsonStat[id] = jsonStat;
-    pxWidget.customTable.jsonStatTable[id] = pxWidget.customTable.jsonStat[id].toTable({
-        type: 'arrobj',
-        unit: true,
-        content: "id"
-    });
 
-    if (pxWidget.draw.params[id].rowFields.length && pxWidget.draw.params[id].columnFields.length) {
-        pxWidget.customTable.parsePivotData(id);
+    if (pxWidget.draw.params[id].rowFields.length && pxWidget.draw.params[id].columnFields.length) { //it's a multi pivot or pivot table
+        //we need to create a custom version of the JSONstat with variable codes that order correctly so that the order of teh classification is maintained
+        //we only need to do this for the dimensions that are in the columnFields are are not time
+        var jsonStatForPivot = pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id].data.api.response);
+        pxWidget.jQuery.each(pxWidget.draw.params[id].columnFields, function (index, value) {
+            //change if not time
+            if (!jsonStatForPivot.role.time.includes(value)) {
+                //get original dimension
+                var originaldimension = pxWidget.jQuery.extend(true, {}, jsonStatForPivot.dimension[value]);
+                //delete it from jsonStat
+                delete jsonStatForPivot.dimension[value].category;
+                //rebuild
+                jsonStatForPivot.dimension[value].category = {};
+                jsonStatForPivot.dimension[value].category.index = [];
+                jsonStatForPivot.dimension[value].category.label = {};
+
+                pxWidget.jQuery.each(originaldimension.category.index, function (i, v) {
+                    jsonStatForPivot.dimension[value].category.index.push(i);
+                    jsonStatForPivot.dimension[value].category.label[i] = originaldimension.category.label[v];
+                });
+            }
+        });
+        pxWidget.table_v2.jsonStat[id] = new pxWidget.JSONstat(jsonStatForPivot);
+        pxWidget.table_v2.jsonStatTable[id] = pxWidget.table_v2.jsonStat[id].toTable({
+            type: 'arrobj',
+            unit: true,
+            content: "id"
+        });
+        pxWidget.table_v2.parsePivotData(id);
     }
-    else {
-        pxWidget.customTable.parseFlatData(id);
+    else {//if nothing passed in columnFields then it's a flat table
+        var jsonStat = new pxWidget.JSONstat(pxWidget.draw.params[id].data.api.response);
+        pxWidget.table_v2.jsonStat[id] = jsonStat;
+        pxWidget.table_v2.jsonStatTable[id] = pxWidget.table_v2.jsonStat[id].toTable({
+            type: 'arrobj',
+            unit: true,
+            content: "id"
+        });
+        pxWidget.table_v2.parseFlatData(id);
     }
 
 };
@@ -57,26 +81,26 @@ pxWidget.customTable.draw = function (id) {
  * format the values, get the correct label for unit
  * @param {*} id 
  */
-pxWidget.customTable.parsePivotData = function (id) {
+pxWidget.table_v2.parsePivotData = function (id) {
     var parsedData = [];
-    parsedData = pxWidget.customTable.jsonStatTable[id].map(row => {
+    parsedData = pxWidget.table_v2.jsonStatTable[id].map(row => {
         var parsedRow = {}
         for (var key in row) {
             if (key == 'value') {
-                parsedRow[valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
-                parsedRow[valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
+                parsedRow[pxWidget.constant.valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
+                parsedRow[pxWidget.constant.valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
             }
             else if (key == 'unit') {
                 parsedRow[pxWidget.draw.params[id].internationalisation.unit] = row[key].label;
             }
             else {
-                parsedRow[pxWidget.customTable.jsonStat[id].Dimension(key).label] = row[key];
+                parsedRow[pxWidget.table_v2.jsonStat[id].Dimension(key).label] = row[key];
             }
         }
         return parsedRow
     });
 
-    pxWidget.customTable.pivotData(parsedData, id);
+    pxWidget.table_v2.pivotData(parsedData, id);
 
 };
 
@@ -84,13 +108,13 @@ pxWidget.customTable.parsePivotData = function (id) {
  * Format values in data
  * @param {*} id 
  */
-pxWidget.customTable.parseFlatData = function (id) {
+pxWidget.table_v2.parseFlatData = function (id) {
     var parsedData = [];
-    parsedData = pxWidget.customTable.jsonStatTable[id].map(row => {
+    parsedData = pxWidget.table_v2.jsonStatTable[id].map(row => {
         var parsedRow = {}
         for (var key in row) {
             if (key == 'value') {
-                parsedRow[valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
+                parsedRow[pxWidget.constant.valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
             }
             else {
                 parsedRow[key] = row[key]
@@ -100,7 +124,7 @@ pxWidget.customTable.parseFlatData = function (id) {
     });
 
     var flatTableOptions = pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id].options);
-    pxWidget.customTable.renderFlatTable(parsedData, id, flatTableOptions);
+    pxWidget.table_v2.renderFlatTable(parsedData, id, flatTableOptions);
 };
 
 /**
@@ -108,10 +132,10 @@ pxWidget.customTable.parseFlatData = function (id) {
  * @param {*} data 
  * @param {*} id 
  */
-pxWidget.customTable.pivotData = function (data, id) {
-    const pivotMap = new Map();
-    const rowValues = new Set();
-    const columnValues = new Set();
+pxWidget.table_v2.pivotData = function (data, id) {
+    var pivotMap = new Map();
+    var rowValues = new Set();
+    var columnValues = new Set();
 
     //get labels for row fields and columns fields
     var rowFieldsLabels = [];
@@ -120,7 +144,7 @@ pxWidget.customTable.pivotData = function (data, id) {
             rowFieldsLabels.push(value)
         }
         else {
-            rowFieldsLabels.push(pxWidget.customTable.jsonStat[id].Dimension(value).label);
+            rowFieldsLabels.push(pxWidget.table_v2.jsonStat[id].Dimension(value).label);
         }
 
     });
@@ -131,18 +155,18 @@ pxWidget.customTable.pivotData = function (data, id) {
             columnFieldsLabels.push(value)
         }
         else {
-            columnFieldsLabels.push(pxWidget.customTable.jsonStat[id].Dimension(value).label);
+            columnFieldsLabels.push(pxWidget.table_v2.jsonStat[id].Dimension(value).label);
         }
     });
     // Create pivot map
     for (let i = 0; i < data.length; i++) {
-        const row = data[i];
+        var row = data[i];
         // Create a unique key for each row combination
-        const rowKey = rowFieldsLabels.map(field => String(row[field] || '')).join('|');
+        var rowKey = rowFieldsLabels.map(field => String(row[field] || '')).join(pxWidget.constant.separator);
         // Create a unique key for each column combination
-        const columnKey = columnFieldsLabels.map(field => String(row[field] || '')).join('|');
+        var columnKey = columnFieldsLabels.map(field => String(row[field] || '')).join(pxWidget.constant.separator);
         // Get the value from the actual value field
-        const value = row[valueField];
+        var value = row[pxWidget.constant.valueField];
 
         // Add the row and column keys to their respective sets
         rowValues.add(rowKey);
@@ -157,19 +181,19 @@ pxWidget.customTable.pivotData = function (data, id) {
     }
 
     // Sort column values for grouping
-    const sortedColumnValues = Array.from(columnValues).sort();
+    var sortedColumnValues = Array.from(columnValues).sort();
 
     // Create pivoted data array
-    const pivotedData = [
+    var pivotedData = [
         [...rowFieldsLabels, ...sortedColumnValues]
     ];
 
-    // Iterate over each sorted row value
+    // Iterate over each row value
     rowValues.forEach(rowValue => {
         // Split the row key back into its component parts
-        const rowData = rowValue.split('|');
+        var rowData = rowValue.split(pxWidget.constant.separator);
         // Start building a new row for the pivoted table with the row data
-        const newRow = [...rowData];
+        var newRow = [...rowData];
 
         // Iterate over each sorted column value
         sortedColumnValues.forEach(columnValue => {
@@ -177,7 +201,7 @@ pxWidget.customTable.pivotData = function (data, id) {
             // If the value is not found, use an empty string as a default
             newRow.push(pivotMap.get(rowValue)?.get(columnValue) || '');
         });
-        // Add the newly constructed row to the pivoted data array
+        // Add the newly varructed row to the pivoted data array
         pivotedData.push(newRow);
     });
 
@@ -186,7 +210,7 @@ pxWidget.customTable.pivotData = function (data, id) {
         rowFieldsCount: rowFieldsLabels.length,
         columnFieldsCount: columnFieldsLabels.length
     };
-    pxWidget.customTable.renderPivotedTable(pivotedResult, id)
+    pxWidget.table_v2.renderPivotedTable(pivotedResult, id)
 
 };
 
@@ -195,11 +219,11 @@ pxWidget.customTable.pivotData = function (data, id) {
  * @param {*} pivotedResult 
  * @param {*} id 
  */
-pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
+pxWidget.table_v2.renderPivotedTable = function (pivotedResult, id) {
     // Destructure the input object to get necessary data
-    const { data, rowFieldsCount, columnFieldsCount } = pivotedResult;
+    var { data, rowFieldsCount, columnFieldsCount } = pivotedResult;
 
-    pxWidget.customTable.loadCSS(id);
+    pxWidget.table_v2.loadCSS(id);
 
     if (pxWidget.jQuery.fn.DataTable.isDataTable('#' + id + " table")) {
         pxWidget.jQuery('#' + id + " table").DataTable().destroy();
@@ -238,20 +262,20 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
     //create csvDownloadHeaderRow
     var csvHeaderRow = [];
     pxWidget.jQuery.each(data[0], function (index, value) {
-        if (index <= rowFieldsCount) {
+        if (index < rowFieldsCount) {
             csvHeaderRow.push(value);
         }
         else {
             var header = "";
-            pxWidget.jQuery.each(value.split('|'), function (i, v) {
+            pxWidget.jQuery.each(value.split(pxWidget.constant.separator), function (i, v) {
                 var headerComponent;
                 if (pxWidget.draw.params[id].columnFields[i].toLowerCase() == pxWidget.draw.params[id].internationalisation.unit.toLowerCase()) {
                     headerComponent = v
-                        + (i != value.split('|').length - 1 ? "|" : "");
+                        + (i != value.split("|").length - 1 ? "|" : "");
                 }
                 else {
-                    headerComponent = pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].columnFields[i]).Category(v).label
-                        + (i != value.split('|').length - 1 ? "|" : "");
+                    headerComponent = pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].columnFields[i]).Category(v).label
+                        + (i != value.split("|").length - 1 ? "|" : "");
                 }
                 header += headerComponent;
             });
@@ -284,7 +308,7 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
         // Add column field headers
         for (let j = rowFieldsCount; j < data[0].length; j++) {
             // Split the header text to get the current level's value
-            const headerParts = data[0][j].split('|');
+            var headerParts = data[0][j].split(pxWidget.constant.separator);
             if (headerParts[i] === lastHeader) {
                 // If it's the same as the last header, increase the colspan
                 colspan++;
@@ -301,7 +325,7 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
                                     return lastHeader
                                 }
                                 else {
-                                    return pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].columnFields[i]).Category(lastHeader).label
+                                    return pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].columnFields[i]).Category(lastHeader).label
                                 }
 
                             }
@@ -325,7 +349,7 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
                             return lastHeader
                         }
                         else {
-                            return pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].columnFields[i]).Category(lastHeader).label
+                            return pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].columnFields[i]).Category(lastHeader).label
                         }
                     }
                 )
@@ -336,9 +360,9 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
     //check if we have highlighted dimension row in rowFields and get position
     var highlightedDimensionPosition = pxWidget.draw.params[id].rowFields.indexOf(pxWidget.draw.params[id].highlightRow.dimension);
     var timeDimensionCode = null;
-    pxWidget.jQuery.each(pxWidget.customTable.jsonStat[id].Dimension(), function (index, value) {
+    pxWidget.jQuery.each(pxWidget.table_v2.jsonStat[id].Dimension(), function (index, value) {
         if (value.role == "time") {
-            timeDimensionCode = pxWidget.customTable.jsonStat[id].id[index];
+            timeDimensionCode = pxWidget.table_v2.jsonStat[id].id[index];
             return;
         }
     });
@@ -371,13 +395,13 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
                     if (pxWidget.draw.params[id].rowFields[index] == timeDimensionCode) {
                         pxWidget.jQuery('<td>', {
                             "data-custom-sort": cell //used for sorting time by codes ather than labels
-                        }).html(pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label).appendTo($dataRow);
-                        csvDataRow.push(pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label);
+                        }).html(pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label).appendTo($dataRow);
+                        csvDataRow.push(pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label);
                     }
                     else {
                         pxWidget.jQuery('<td>', {
-                        }).html(pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label).appendTo($dataRow);
-                        csvDataRow.push(pxWidget.customTable.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label);
+                        }).html(pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label).appendTo($dataRow);
+                        csvDataRow.push(pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.draw.params[id].rowFields[index]).Category(cell).label);
                     }
 
                 }
@@ -405,7 +429,7 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
         {
             text: 'Download CSV',
             action: function (e, dt) {
-                pxWidget.customTable.downloadCsv(csvDownloadData, pxWidget.draw.params[id].matrix + "_" + pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'));
+                pxWidget.table_v2.downloadCsv(csvDownloadData, pxWidget.draw.params[id].matrix + "_" + pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'));
 
             }
         }
@@ -425,9 +449,9 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
 
         //get statistic dimension code to turn off orderable in that column
         var statisticDimensionCode = null;
-        pxWidget.jQuery.each(pxWidget.customTable.jsonStat[id].Dimension(), function (index, value) {
+        pxWidget.jQuery.each(pxWidget.table_v2.jsonStat[id].Dimension(), function (index, value) {
             if (value.role == "metric") {
-                statisticDimensionCode = pxWidget.customTable.jsonStat[id].id[index];
+                statisticDimensionCode = pxWidget.table_v2.jsonStat[id].id[index];
                 return;
             }
         });
@@ -447,7 +471,7 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
     });
     pivotTableOptions.columnDefs.push({ targets: valueColumnIndex, type: "data" });
 
-    pxWidget.customTable.runDataTable(id, pivotTableOptions);
+    pxWidget.table_v2.runDataTable(id, pivotTableOptions);
 
 };
 
@@ -457,8 +481,8 @@ pxWidget.customTable.renderPivotedTable = function (pivotedResult, id) {
  * @param {*} id 
  * @param {*} flatTableOptions 
  */
-pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
-    pxWidget.customTable.loadCSS(id);
+pxWidget.table_v2.renderFlatTable = function (data, id, flatTableOptions) {
+    pxWidget.table_v2.loadCSS(id);
     if (window.jQuery && window.jQuery.fn.modal) {
         // Clear the container and create a new table element
         pxWidget.jQuery('#' + id).empty().html(pxWidget.jQuery('<table>', {
@@ -482,22 +506,22 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
 
     var timeDimensionCode = null;
     var classificationDimensions = [];
-    pxWidget.jQuery.each(pxWidget.customTable.jsonStat[id].Dimension(), function (index, value) {
+    pxWidget.jQuery.each(pxWidget.table_v2.jsonStat[id].Dimension(), function (index, value) {
         if (value.role == "time") {
-            timeDimensionCode = pxWidget.customTable.jsonStat[id].id[index];
+            timeDimensionCode = pxWidget.table_v2.jsonStat[id].id[index];
         }
         if (value.role == "classification") {
-            classificationDimensions.push(pxWidget.customTable.jsonStat[id].id[index]);
+            classificationDimensions.push(pxWidget.table_v2.jsonStat[id].id[index]);
         }
     });
 
     // Construct the header array in the desired order
-    const headersOrdered = [
-        statisticField,
+    var headersOrdered = [
+        pxWidget.constant.statisticField,
         timeDimensionCode,
         ...classificationDimensions,
         "unit",
-        valueField
+        pxWidget.constant.valueField
     ];
     var csvDownloadData = [];
     var csvHeaderRow = [];
@@ -507,17 +531,17 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
             pxWidget.jQuery('<th>', { style: "text-align: left" }).html(pxWidget.draw.params[id].internationalisation.unit).appendTo($headerRow);
             csvHeaderRow.push(pxWidget.draw.params[id].internationalisation.unit);
         }
-        else if (header == valueField) {
+        else if (header == pxWidget.constant.valueField) {
             pxWidget.jQuery('<th>', { style: "text-align: right" }).html(pxWidget.draw.params[id].internationalisation.value).appendTo($headerRow);
             csvHeaderRow.push(pxWidget.draw.params[id].internationalisation.value);
         }
-        else if (header == statisticField) {
-            pxWidget.jQuery('<th>', { style: "text-align: left" }).html(pxWidget.jQuery('<span>', { name: "code", text: header, style: "display:none;" }).get(0).outerHTML + pxWidget.customTable.jsonStat[id].Dimension(statisticField).label).appendTo($headerRow);
-            csvHeaderRow.push(pxWidget.customTable.jsonStat[id].Dimension(statisticField).label);
+        else if (header == pxWidget.constant.statisticField) {
+            pxWidget.jQuery('<th>', { style: "text-align: left" }).html(pxWidget.jQuery('<span>', { name: "code", text: header, style: "display:none;" }).get(0).outerHTML + pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.constant.statisticField).label).appendTo($headerRow);
+            csvHeaderRow.push(pxWidget.table_v2.jsonStat[id].Dimension(pxWidget.constant.statisticField).label);
         }
         else {//classifications
-            pxWidget.jQuery('<th>', { style: "text-align: left" }).html(pxWidget.jQuery('<span>', { name: "code", text: header, style: "display:none;" }).get(0).outerHTML + pxWidget.customTable.jsonStat[id].Dimension(header).label).appendTo($headerRow);
-            csvHeaderRow.push(pxWidget.customTable.jsonStat[id].Dimension(header).label);
+            pxWidget.jQuery('<th>', { style: "text-align: left" }).html(pxWidget.jQuery('<span>', { name: "code", text: header, style: "display:none;" }).get(0).outerHTML + pxWidget.table_v2.jsonStat[id].Dimension(header).label).appendTo($headerRow);
+            csvHeaderRow.push(pxWidget.table_v2.jsonStat[id].Dimension(header).label);
         }
 
     });
@@ -531,18 +555,18 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
                 pxWidget.jQuery('<td>').html(row[header].label).appendTo($dataRow);
                 csvDataRow.push(row[header].label);
             }
-            else if (header == valueField) {
+            else if (header == pxWidget.constant.valueField) {
                 pxWidget.jQuery('<td>', { style: "text-align: right; font-weight: bold" }).html(row[header]).appendTo($dataRow);
                 csvDataRow.push(row[header]);
             }
             else if (header == timeDimensionCode) {
                 //add data-custom-sort for sorting by code instead of label
-                pxWidget.jQuery('<td>', { "data-custom-sort": row[header] }).html(pxWidget.jQuery('<span>', { name: "code", text: row[header], style: "display:none;" }).get(0).outerHTML + pxWidget.customTable.jsonStat[id].Dimension(header).Category(row[header]).label).appendTo($dataRow);
-                csvDataRow.push(pxWidget.customTable.jsonStat[id].Dimension(header).Category(row[header]).label);
+                pxWidget.jQuery('<td>', { "data-custom-sort": row[header] }).html(pxWidget.jQuery('<span>', { name: "code", text: row[header], style: "display:none;" }).get(0).outerHTML + pxWidget.table_v2.jsonStat[id].Dimension(header).Category(row[header]).label).appendTo($dataRow);
+                csvDataRow.push(pxWidget.table_v2.jsonStat[id].Dimension(header).Category(row[header]).label);
             }
             else {
-                pxWidget.jQuery('<td>').html(pxWidget.jQuery('<span>', { name: "code", text: row[header], style: "display:none;" }).get(0).outerHTML + pxWidget.customTable.jsonStat[id].Dimension(header).Category(row[header]).label).appendTo($dataRow);
-                csvDataRow.push(pxWidget.customTable.jsonStat[id].Dimension(header).Category(row[header]).label)
+                pxWidget.jQuery('<td>').html(pxWidget.jQuery('<span>', { name: "code", text: row[header], style: "display:none;" }).get(0).outerHTML + pxWidget.table_v2.jsonStat[id].Dimension(header).Category(row[header]).label).appendTo($dataRow);
+                csvDataRow.push(pxWidget.table_v2.jsonStat[id].Dimension(header).Category(row[header]).label)
             }
         });
 
@@ -553,7 +577,7 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
         {
             text: 'Download CSV',
             action: function (e, dt) {
-                pxWidget.customTable.downloadCsv(csvDownloadData, pxWidget.draw.params[id].matrix + "_" + pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'));
+                pxWidget.table_v2.downloadCsv(csvDownloadData, pxWidget.draw.params[id].matrix + "_" + pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'));
 
             }
         }
@@ -563,7 +587,7 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
     let timeColumnIndex = headersOrdered.indexOf(timeDimensionCode);
     flatTableOptions.order = [[timeColumnIndex, 'desc']];
 
-    let sastatisticColumnIndex = headersOrdered.indexOf(statisticField);
+    let sastatisticColumnIndex = headersOrdered.indexOf(pxWidget.constant.statisticField);
     flatTableOptions.columnDefs.push({ targets: [sastatisticColumnIndex], orderable: false });
     //set the value column as type  data for natural sorting
     flatTableOptions.columnDefs.push({
@@ -576,7 +600,7 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
         orderDataType: "custom-sort"
     });
 
-    pxWidget.customTable.runDataTable(id, flatTableOptions);
+    pxWidget.table_v2.runDataTable(id, flatTableOptions);
 
 };
 
@@ -585,9 +609,9 @@ pxWidget.customTable.renderFlatTable = function (data, id, flatTableOptions) {
  * @param {*} id 
  * @param {*} options 
  */
-pxWidget.customTable.runDataTable = function (id, options) {
+pxWidget.table_v2.runDataTable = function (id, options) {
     // Initialize DataTable with options
-    pxWidget.customTable.dataTable[id] = pxWidget.jQuery('#pivotTable' + id).DataTable(options).on('order.dt', function (e) {
+    pxWidget.table_v2.dataTable[id] = pxWidget.jQuery('#pivotTable' + id).DataTable(options).on('order.dt', function (e) {
 
         if (pxWidget.draw.callback[id]) {
             //pick up the sort order and run the callback to draw the snippet with new sort order
@@ -600,7 +624,7 @@ pxWidget.customTable.runDataTable = function (id, options) {
     var footerElements = [];
 
     if (pxWidget.draw.params[id].copyright) {
-        footerElements.push('&copy; ' + pxWidget.customTable.jsonStat[id].extension.copyright.name);
+        footerElements.push('&copy; ' + pxWidget.table_v2.jsonStat[id].extension.copyright.name);
     }
 
     if (pxWidget.draw.params[id].link) {
@@ -631,12 +655,12 @@ pxWidget.customTable.runDataTable = function (id, options) {
  * Load datatable CSS at asynch runtime
  * @param {*} id 
  */
-pxWidget.customTable.loadCSS = function (id) {
+pxWidget.table_v2.loadCSS = function (id) {
     //Avoid loading CSS multiple times
-    if (pxWidget.customTable.isCSSloaded) {
+    if (pxWidget.table_v2.isCSSloaded) {
         return;
     } else {
-        pxWidget.customTable.isCSSloaded = true;
+        pxWidget.table_v2.isCSSloaded = true;
     }
 
     // Load Bootstrap extensions for Datatable if Bootstrap is found
@@ -659,7 +683,7 @@ pxWidget.customTable.loadCSS = function (id) {
  * @param {*} json_data 
  * @param {*} filename 
  */
-pxWidget.customTable.downloadCsv = function (json_data, filename) {
+pxWidget.table_v2.downloadCsv = function (json_data, filename) {
 
     var data = pxWidget.jQuery.extend(true, [], json_data);
     var dataForCsv = data.map(array => array.map(item => item.replace(/\.\./g, '')));
@@ -691,7 +715,7 @@ pxWidget.customTable.downloadCsv = function (json_data, filename) {
  * @param {*} id 
  * @returns 
  */
-pxWidget.customTable.metadata.compile = function (id) {
+pxWidget.table_v2.metadata.compile = function (id) {
 
     //If no fluid, no need to read metadata
     if (!pxWidget.draw.params[id].fluidTime || !pxWidget.draw.params[id].fluidTime.length) {
@@ -700,7 +724,7 @@ pxWidget.customTable.metadata.compile = function (id) {
 
     //is fluid and no metadata yet, need to get metadata
     if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.response)) {
-        pxWidget.customTable.ajax.readMetadata(id);
+        pxWidget.table_v2.ajax.readMetadata(id);
         // Avoid self-looping
         return false;
     }
@@ -715,10 +739,10 @@ pxWidget.customTable.metadata.compile = function (id) {
  * @param {*} id 
  * @returns 
  */
-pxWidget.customTable.ajax.readMetadata = function (id) {
+pxWidget.table_v2.ajax.readMetadata = function (id) {
     // Check data query exists
     if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].metadata.api.query)) {
-        pxWidget.draw.error(id, 'pxWidget.customTable.ajax.readMetadata: missing data query');
+        pxWidget.draw.error(id, 'pxWidget.table_v2.ajax.readMetadata: missing data query');
         return;
     }
 
@@ -726,9 +750,9 @@ pxWidget.customTable.ajax.readMetadata = function (id) {
         pxWidget.draw.params[id].metadata.api.query.url,
         pxWidget.draw.params[id].metadata.api.query.data.method,
         pxWidget.draw.params[id].metadata.api.query.data.params,
-        "pxWidget.customTable.callback.readMetadataOnSuccess",
+        "pxWidget.table_v2.callback.readMetadataOnSuccess",
         id,
-        "pxWidget.customTable.callback.readMetadataOnError",
+        "pxWidget.table_v2.callback.readMetadataOnError",
         id,
         { async: false },
         id)
@@ -739,9 +763,9 @@ pxWidget.customTable.ajax.readMetadata = function (id) {
  * @param {*} response 
  * @param {*} id 
  */
-pxWidget.customTable.callback.readMetadataOnSuccess = function (response, id) {
+pxWidget.table_v2.callback.readMetadataOnSuccess = function (response, id) {
     if (pxWidget.jQuery.isEmptyObject(response)) {
-        pxWidget.draw.error(id, 'pxWidget.customTable.callback.readMetadataOnSuccess: missing data response');
+        pxWidget.draw.error(id, 'pxWidget.table_v2.callback.readMetadataOnSuccess: missing data response');
     } else {
         pxWidget.draw.params[id].metadata.api.response = response;
 
@@ -767,10 +791,10 @@ pxWidget.customTable.callback.readMetadataOnSuccess = function (response, id) {
                 pxWidget.draw.params[id].data.api.query.data.params.dimension[timeDimensionCode].category.index.push(metadataJsonStat.Dimension(timeDimensionCode).id[(dimensionSize - value) - 1]);
             });
             // Restart the drawing after successful compilation 
-            pxWidget.customTable.draw(id);
+            pxWidget.table_v2.draw(id);
         }
         else {
-            pxWidget.draw.error(id, 'pxWidget.customTable.metadata.compile: invalid data response');
+            pxWidget.draw.error(id, 'pxWidget.table_v2.metadata.compile: invalid data response');
         }
     }
 };
@@ -780,8 +804,8 @@ pxWidget.customTable.callback.readMetadataOnSuccess = function (response, id) {
  * @param {*} error 
  * @param {*} id 
  */
-pxWidget.customTable.callback.readMetadataOnError = function (error, id) {
-    pxWidget.draw.error(id, 'pxWidget.customTable.ajax.readMetadata: Unable to retreive data. Please try again later.', true);
+pxWidget.table_v2.callback.readMetadataOnError = function (error, id) {
+    pxWidget.draw.error(id, 'pxWidget.table_v2.ajax.readMetadata: Unable to retreive data. Please try again later.', true);
 };
 
 /**
@@ -789,9 +813,9 @@ pxWidget.customTable.callback.readMetadataOnError = function (error, id) {
  * @param {*} id 
  * @returns 
  */
-pxWidget.customTable.data.compile = function (id) {
+pxWidget.table_v2.data.compile = function (id) {
     if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].data.api.response)) {
-        pxWidget.customTable.ajax.readDataset(id);
+        pxWidget.table_v2.ajax.readDataset(id);
         // Avoid self-looping
         return false;
     }
@@ -805,10 +829,10 @@ pxWidget.customTable.data.compile = function (id) {
  * @param {*} id 
  * @returns 
  */
-pxWidget.customTable.ajax.readDataset = function (id) {
+pxWidget.table_v2.ajax.readDataset = function (id) {
     // Check data query exists
     if (pxWidget.jQuery.isEmptyObject(pxWidget.draw.params[id].data.api.query)) {
-        pxWidget.draw.error(id, 'pxWidget.customTable.ajax.readDataset: missing data query');
+        pxWidget.draw.error(id, 'pxWidget.table_v2.ajax.readDataset: missing data query');
         return;
     }
 
@@ -817,9 +841,9 @@ pxWidget.customTable.ajax.readDataset = function (id) {
         pxWidget.draw.params[id].data.api.query.url,
         pxWidget.draw.params[id].data.api.query.data.method,
         pxWidget.draw.params[id].data.api.query.data.params,
-        "pxWidget.customTable.callback.readDatasetOnSuccess",
+        "pxWidget.table_v2.callback.readDatasetOnSuccess",
         id,
-        "pxWidget.customTable.callback.readDatasetOnError",
+        "pxWidget.table_v2.callback.readDatasetOnError",
         id,
         { async: false },
         id)
@@ -830,13 +854,13 @@ pxWidget.customTable.ajax.readDataset = function (id) {
  * @param {*} response 
  * @param {*} id 
  */
-pxWidget.customTable.callback.readDatasetOnSuccess = function (response, id) {
+pxWidget.table_v2.callback.readDatasetOnSuccess = function (response, id) {
     if (pxWidget.jQuery.isEmptyObject(response)) {
-        pxWidget.draw.error(id, 'pxWidget.customTable.callback.readDatasetOnSuccess: missing data response');
+        pxWidget.draw.error(id, 'pxWidget.table_v2.callback.readDatasetOnSuccess: missing data response');
     } else {
         pxWidget.draw.params[id].data.api.response = response;
         // Restart the drawing after successful compilation
-        pxWidget.customTable.draw(id);
+        pxWidget.table_v2.draw(id);
     }
 };
 
@@ -845,6 +869,6 @@ pxWidget.customTable.callback.readDatasetOnSuccess = function (response, id) {
  * @param {*} error 
  * @param {*} id 
  */
-pxWidget.customTable.callback.readDatasetOnError = function (error, id) {
+pxWidget.table_v2.callback.readDatasetOnError = function (error, id) {
     pxWidget.draw.error(id, 'Unable to retreive data. Please try again later.', true);
 };

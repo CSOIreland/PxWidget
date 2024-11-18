@@ -14,13 +14,6 @@ pxWidget.map.values = [];
 pxWidget.map.minValue = [];
 pxWidget.map.maxValue = [];
 
-const geometryTypeMultiPolygon = "MultiPolygon";
-const geometryTypePolygon = "Polygon";
-const geometryTypePoint = "Point";
-
-
-
-
 /**
  * Draw a pxWidget Chart
  * @param {*} id 
@@ -76,7 +69,7 @@ The parent outer function must be async
     var markerLayer = null;
     var coloursUsed = [];
 
-    if (geometryType == geometryTypeMultiPolygon || geometryType == geometryTypePolygon) {
+    if (geometryType == pxWidget.constant.geometryTypeMultiPolygon || geometryType == pxWidget.constant.geometryTypePolygon) {
 
         var polygonConfig = {
             valueProperty: 'value',
@@ -147,7 +140,7 @@ The parent outer function must be async
 
         choroplethLayer = pxWidget.L.choropleth(pxWidget.map.geojson[id], polygonConfig);
     }
-    else if (geometryType == geometryTypePoint) {
+    else if (geometryType == pxWidget.constant.geometryTypePoint) {
         var pointConfig = {
             onEachFeature: function (feature, layer) {
 
@@ -279,7 +272,7 @@ The parent outer function must be async
     });
 
     //only show markers for points at zoomed in level
-    if (geometryType == geometryTypePoint) {
+    if (geometryType == pxWidget.constant.geometryTypePoint) {
         map.on("zoomend", function () {
             var zoomlevel = map.getZoom();
             if (zoomlevel < 10) {
@@ -354,8 +347,8 @@ The parent outer function must be async
             var legend = pxWidget.L.control({ position: 'topright' })
 
             legend.onAdd = function (map) {
-                const div = pxWidget.L.DomUtil.create('div', 'info legend');
-                const grades = choroplethLayer.options.limits;
+                var div = pxWidget.L.DomUtil.create('div', 'info legend');
+                var grades = choroplethLayer.options.limits;
                 var colors = choroplethLayer.options.colors;
                 var partitions = [];
                 var startItterator = null;
@@ -414,7 +407,7 @@ The parent outer function must be async
                     });
                 }
 
-                const labels = [];
+                var labels = [];
 
                 pxWidget.jQuery.each(partitions, function (index, value) {
                     //only use the partition if the colour has been applied to a feature

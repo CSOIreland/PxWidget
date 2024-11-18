@@ -57,7 +57,7 @@ pxWidget.draw.init = function (type, id, params, callback) {
       break;
     case pxWidget.draw.type.tablev2:
       pxWidget.jQuery('#' + id).addClass("table");
-      pxWidget.customTable.draw(id);
+      pxWidget.table_v2.draw(id);
       break;
     case pxWidget.draw.type.map:
       pxWidget.jQuery('#' + id).addClass("map");

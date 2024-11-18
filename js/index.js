@@ -76,13 +76,13 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/mholt/Pap
 
 // pxWidget JS
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/noconflict.js' : 'js/noconflict.min.js'));
-
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/constant.js' : 'js/constant.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/config.js' : 'js/config.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/plugin.js' : 'js/plugin.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/library.js' : 'js/library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/chart.library.js' : 'js/chart.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/table.library.js' : 'js/table.library.min.js'));
-pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/table.library.custom.js' : 'js/table.library.custom.min.js'));
+pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/table_v2.library.js' : 'js/table_v2.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/map.library.js' : 'js/map.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/draw.library.js' : 'js/draw.library.min.js'));
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/draw.js' : 'js/draw.min.js'));
