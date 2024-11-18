@@ -40,7 +40,7 @@ pxWidget.table_v2.draw = function (id) {
         var jsonStatForPivot = pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id].data.api.response);
         pxWidget.jQuery.each(pxWidget.draw.params[id].columnFields, function (index, value) {
             //change if not time
-            if (!jsonStatForPivot.role.time.includes(value)) {
+            if (!jsonStatForPivot.role.time.includes(value) && value.toLowerCase() != pxWidget.draw.params[id].internationalisation.unit.toLowerCase()) {
                 //get original dimension
                 var originaldimension = pxWidget.jQuery.extend(true, {}, jsonStatForPivot.dimension[value]);
                 //delete it from jsonStat
