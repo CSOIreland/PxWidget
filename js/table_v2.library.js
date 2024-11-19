@@ -42,17 +42,25 @@ pxWidget.table_v2.draw = function (id) {
             //change if not time
             if (!jsonStatForPivot.role.time.includes(value) && value.toLowerCase() != pxWidget.draw.params[id].internationalisation.unit.toLowerCase()) {
                 //get original dimension
-                var originaldimension = pxWidget.jQuery.extend(true, {}, jsonStatForPivot.dimension[value]);
+                var originalDimension = pxWidget.jQuery.extend(true, {}, jsonStatForPivot.dimension[value]);
                 //delete it from jsonStat
                 delete jsonStatForPivot.dimension[value].category;
                 //rebuild
                 jsonStatForPivot.dimension[value].category = {};
                 jsonStatForPivot.dimension[value].category.index = [];
                 jsonStatForPivot.dimension[value].category.label = {};
+                if (originalDimension.category.unit) {
+                    jsonStatForPivot.dimension[value].category.unit = {};
+                }
 
-                pxWidget.jQuery.each(originaldimension.category.index, function (i, v) {
+                pxWidget.jQuery.each(originalDimension.category.index, function (i, v) {
                     jsonStatForPivot.dimension[value].category.index.push(i);
-                    jsonStatForPivot.dimension[value].category.label[i] = originaldimension.category.label[v];
+                    jsonStatForPivot.dimension[value].category.label[i] = originalDimension.category.label[v];
+                    //if unit existed in original dimension, rebuild it and reattach it
+                    if (originalDimension.category.unit) {
+                        var originalUnit = pxWidget.jQuery.extend(true, {}, originalDimension.category.unit[v]);
+                        jsonStatForPivot.dimension[value].category.unit[i] = originalUnit;
+                    }
                 });
             }
         });
