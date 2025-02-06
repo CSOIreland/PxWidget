@@ -287,6 +287,12 @@ pxWidget.chart.draw = function (id) {
         pxWidget.draw.params[id].data.labels = pxWidget.draw.params[id].data.labels.slice(0, pxWidget.draw.params[id].maxNumberValues);
     }
 
+    if (pxWidget.draw.params[id].labelMap) {
+        // Translate labels
+        pxWidget.draw.params[id].data.labels = pxWidget.draw.params[id].data.labels.map(label => pxWidget.draw.params[id].labelMap[label] || label);
+    }
+
+
     // Run ChartJS
     var chart = new pxWidget.Chart(pxWidget.jQuery('#' + id).find('canvas'), pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id]));
 
