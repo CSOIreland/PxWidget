@@ -249,16 +249,20 @@ pxWidget.table_v2.getTopEntries = function (data, columnIndex, direction, topCou
         throw new Error("Top count must be a positive integer.");
     }
 
-    // Extract data without headers
-    const dataRows = data.slice(1);
+    // Extract data without headers and filter out rows with non-numeric values in the specified column
+    const dataRows = data.slice(1).filter(row => {
+        return !isNaN(parseInt(row[columnIndex]));
+    });
+
     // Sort the data based on the specified column index
     const sortedData = dataRows.sort((a, b) => {
         const aValue = parseInt(a[columnIndex]);
         const bValue = parseInt(b[columnIndex]);
 
 
-        if (direction = "asc") {
+        if (direction == "asc") {
             return bValue - aValue;
+
         } else {
             return aValue - bValue;
         }
