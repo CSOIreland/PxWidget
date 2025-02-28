@@ -213,63 +213,14 @@ pxWidget.table_v2.pivotData = function (data, id) {
         pivotedData.push(newRow);
     });
 
-    var pivotedDataTopEntries = null;
-    if (pxWidget.draw.params[id].options.order.length && pxWidget.draw.params[id].topEntries) {
-        pivotedDataTopEntries = pxWidget.table_v2.getTopEntries(pivotedData, pxWidget.draw.params[id].options.order[0][0], pxWidget.draw.params[id].options.order[0][1], pxWidget.draw.params[id].topEntries);
-    }
     var pivotedResult = {
-        data: pivotedDataTopEntries || pivotedData,
+        data: pivotedData,
         rowFieldsCount: rowFieldsLabels.length,
         columnFieldsCount: columnFieldsLabels.length
     };
     pxWidget.table_v2.renderPivotedTable(pivotedResult, id)
 
 };
-
-/**
- * Sorts and truncates data based on a specific column index, including headers.
- *
- * @param {Array} data - The original 2D array of data including headers.
- * @param {number} columnIndex - The column index to sort by (excluding header row).
- * @param {string} direction - Sorts in ascending order; otherwise, sorts in descending order.
- * @param {number} topCount - The number of top entries to return.
- * @returns {Array} The headers followed by the top 'n' entries sorted based on the specified column.
- */
-pxWidget.table_v2.getTopEntries = function (data, columnIndex, direction, topCount) {
-    // Extract headers
-    const headers = data[0];
-
-    // Ensure the columnIndex is valid, accounting for the presence of headers
-    if (columnIndex < 0 || columnIndex >= headers.length) {
-        throw new Error("Column index is out of range.");
-    }
-
-    // Ensure topCount is a positive integer
-    if (topCount <= 0) {
-        throw new Error("Top count must be a positive integer.");
-    }
-
-    // Extract data without headers and filter out rows with non-numeric values in the specified column
-    const dataRows = data.slice(1).filter(row => {
-        return !isNaN(parseInt(row[columnIndex]));
-    });
-
-    // Sort the data based on the specified column index
-    const sortedData = dataRows.sort((a, b) => {
-        const aValue = parseInt(a[columnIndex]);
-        const bValue = parseInt(b[columnIndex]);
-
-
-        if (direction == "asc") {
-            return bValue - aValue;
-
-        } else {
-            return aValue - bValue;
-        }
-    });
-    // Return headers followed by the top 'n' results
-    return [headers, ...sortedData.slice(0, topCount)];
-}
 
 /**
  * Draw the pivoted HTML table with complex headers
