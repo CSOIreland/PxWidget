@@ -95,8 +95,15 @@ pxWidget.table_v2.parsePivotData = function (id) {
         var parsedRow = {}
         for (var key in row) {
             if (key == 'value') {
-                parsedRow[pxWidget.constant.valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
-                parsedRow[pxWidget.constant.valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
+                //format the value
+                var valueFormatted = pxWidget.formatNumber(row[key], row['unit'].decimals);
+                var isNumber = !isNaN(parseFloat(valueFormatted)) && isFinite(valueFormatted);
+                if (isNumber) {
+                    parsedRow[pxWidget.constant.valueField] = valueFormatted;
+                }
+                else {
+                    parsedRow[pxWidget.constant.valueField] = pxWidget.draw.params[id].defaultContent;
+                }
             }
             else if (key == 'unit') {
                 parsedRow[pxWidget.draw.params[id].internationalisation.unit] = row[key].label;
@@ -122,7 +129,15 @@ pxWidget.table_v2.parseFlatData = function (id) {
         var parsedRow = {}
         for (var key in row) {
             if (key == 'value') {
-                parsedRow[pxWidget.constant.valueField] = row[key] ? pxWidget.formatNumber(row[key], row['unit'].decimals) : pxWidget.draw.params[id].defaultContent;
+                //format the value
+                var valueFormatted = pxWidget.formatNumber(row[key], row['unit'].decimals);
+                var isNumber = !isNaN(parseFloat(valueFormatted)) && isFinite(valueFormatted);
+                if (isNumber) {
+                    parsedRow[pxWidget.constant.valueField] = valueFormatted;
+                }
+                else {
+                    parsedRow[pxWidget.constant.valueField] = pxWidget.draw.params[id].defaultContent;
+                }
             }
             else {
                 parsedRow[key] = row[key]
