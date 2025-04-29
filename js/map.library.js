@@ -71,6 +71,15 @@ The parent outer function must be async
 
     if (geometryType == pxWidget.constant.geometryTypeMultiPolygon || geometryType == pxWidget.constant.geometryTypePolygon) {
 
+        //check is custom weight passed in custom json
+        var borderWeight = 0.2;
+        if (pxWidget.draw.params[id].options.style) {
+            if (pxWidget.draw.params[id].options.style.weight) {
+                borderWeight = pxWidget.draw.params[id].options.style.weight;
+            }
+
+        };
+
         var polygonConfig = {
             valueProperty: 'value',
             scale: ['antiquewhite', pxWidget.draw.params[id].colorScale],
@@ -78,7 +87,7 @@ The parent outer function must be async
             steps: pxWidget.map.values[id][0].length >= pxWidget.config.map.choroplethMap.steps ? pxWidget.config.map.choroplethMap.steps : pxWidget.map.values[id][0].length,
             style: {
                 color: '#6d7878',
-                weight: pxWidget.draw.params[id].borders ? 0.2 : 0,
+                weight: pxWidget.draw.params[id].borders ? borderWeight : 0,
                 fillOpacity: 0.6
             },
             onEachFeature: function (feature, layer) {
@@ -118,7 +127,7 @@ The parent outer function must be async
                 layer.on('mouseout', function (e) {
                     pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "normal");
                     layer.setStyle({
-                        "weight": pxWidget.draw.params[id].borders ? 0.2 : 0
+                        "weight": pxWidget.draw.params[id].borders ? borderWeight : 0
                     });
 
                     var popupAnchor = {
