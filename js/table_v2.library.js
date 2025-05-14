@@ -15,12 +15,12 @@ pxWidget.table_v2.jsonStatTable = [];
 pxWidget.table_v2.dataTable = [];
 
 
+
 /**
  * Draw a pxWidget Table
  * @param {*} id 
  */
 pxWidget.table_v2.draw = function (id) {
-
     // Store it for the data sort plugin
     // This implies that every widget is sharing the same defaultContent
     pxWidget.table_v2.defaultContent = pxWidget.draw.params[id].defaultContent;
@@ -457,14 +457,15 @@ pxWidget.table_v2.renderPivotedTable = function (pivotedResult, id) {
 
     let timeColumnIndex = pxWidget.draw.params[id].rowFields.indexOf(timeDimensionCode);
 
-    if (timeColumnIndex >= 0 && !pxWidget.draw.params[id].options.order.length) {
+    if (timeColumnIndex >= 0) {
+
         //sorting of time by code instead of label
         pivotTableOptions.columnDefs.push({
             targets: timeColumnIndex,
             orderDataType: "custom-sort"
         });
 
-        pivotTableOptions.order = [[timeColumnIndex, 'desc']];
+        pivotTableOptions.order = pxWidget.draw.params[id].options.order.length ? pxWidget.draw.params[id].options.order : [[timeColumnIndex, 'desc']];
 
         //get statistic dimension code to turn off orderable in that column
         var statisticDimensionCode = null;
@@ -488,7 +489,10 @@ pxWidget.table_v2.renderPivotedTable = function (pivotedResult, id) {
             valueColumnIndex.push(index)
         }
     });
-    pivotTableOptions.columnDefs.push({ targets: valueColumnIndex, type: "data" });
+    pivotTableOptions.columnDefs.push({
+        targets: valueColumnIndex,
+        type: "data"
+    });
 
     pxWidget.table_v2.runDataTable(id, pivotTableOptions);
 
