@@ -646,6 +646,11 @@ pxWidget.table_v2.runDataTable = function (id, options) {
 
     var footerElements = [];
 
+    if (pxWidget.table_v2.jsonStat[id].updated) {
+        var dateUpdated = pxWidget.moment(pxWidget.table_v2.jsonStat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(pxWidget.table_v2.jsonStat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
+        footerElements.push(dateUpdated);
+    }
+
     if (pxWidget.draw.params[id].copyright) {
         footerElements.push('&copy; ' + pxWidget.table_v2.jsonStat[id].extension.copyright.name);
     }
