@@ -240,8 +240,25 @@ pxWidget.ajax.jsonrpc.request = function (pAPI_URL, pAPI_Method, pAPI_Params, ca
       if (simulateSync)
         pxWidget.spinner.stop(callID);
     }
-  }
+  };
 
+  //look for an msal token in a cookie for possible authentication 
+  var msalToken = null;
+  var nameEQ = "msalToken" + "="; // Create the cookie name string
+  var cookies = document.cookie.split(';'); // Split all cookies into an array
+
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i].trim(); // Trim whitespace
+    if (cookie.indexOf(nameEQ) === 0) {
+      msalToken = cookie.substring(nameEQ.length, cookie.length); // Return the cookie value
+    }
+  };
+  var headers = pAJAX_Params.headers || {};
+  if (msalToken) {
+    headers["MSAL"] = `Bearer ${msalToken}`;
+  };
+  // Inject headers into AJAX params
+  extendedAJAXParams.headers = headers;
   // Merge pAJAX_Params into extendedAJAXParams
   pxWidget.jQuery.extend(extendedAJAXParams, pAJAX_Params);
 
