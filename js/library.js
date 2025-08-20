@@ -158,6 +158,7 @@ pxWidget.ajax.jsonrpc.request = function (pAPI_URL, pAPI_Method, pAPI_Params, ca
 
   // Default AJAX parameters
   pAJAX_Params = pAJAX_Params || {};
+  pAJAX_Params.headers = pAJAX_Params.headers || {};
   pAJAX_Params.method = pAJAX_Params.method || 'POST';
   pAJAX_Params.dataType = pAJAX_Params.dataType || 'json';
   pAJAX_Params.jsonp = pAJAX_Params.jsonp || false; // Fix for "??" jQuery placeholder
@@ -167,6 +168,11 @@ pxWidget.ajax.jsonrpc.request = function (pAPI_URL, pAPI_Method, pAPI_Params, ca
   // Override to force aSync ajax even during Sync simulation
   pAJAX_Params.async = true;
 
+  //look for an msal token in a cookie for possible authentication 
+  var msalToken = pxWidget.Cookies.get(pxWidget.constant.msalAccessToken);
+  if (msalToken) {
+    pAJAX_Params.headers["MSAL"] = `Bearer ${msalToken}`;
+  };
   // Set the Call ID
   var callID = callID || Math.floor(Math.random() * 999999999) + 1;
 
@@ -242,23 +248,6 @@ pxWidget.ajax.jsonrpc.request = function (pAPI_URL, pAPI_Method, pAPI_Params, ca
     }
   };
 
-  //look for an msal token in a cookie for possible authentication 
-  var msalToken = null;
-  var nameEQ = "msalToken" + "="; // Create the cookie name string
-  var cookies = document.cookie.split(';'); // Split all cookies into an array
-
-  for (let i = 0; i < cookies.length; i++) {
-    let cookie = cookies[i].trim(); // Trim whitespace
-    if (cookie.indexOf(nameEQ) === 0) {
-      msalToken = cookie.substring(nameEQ.length, cookie.length); // Return the cookie value
-    }
-  };
-  var headers = pAJAX_Params.headers || {};
-  if (msalToken) {
-    headers["MSAL"] = `Bearer ${msalToken}`;
-  };
-  // Inject headers into AJAX params
-  extendedAJAXParams.headers = headers;
   // Merge pAJAX_Params into extendedAJAXParams
   pxWidget.jQuery.extend(extendedAJAXParams, pAJAX_Params);
 

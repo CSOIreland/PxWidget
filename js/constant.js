@@ -11,3 +11,4 @@ pxWidget.constant.separator = "|0496b8925785855cf669c12c9c81f2fc|";
 pxWidget.constant.geometryTypeMultiPolygon = "MultiPolygon";
 pxWidget.constant.geometryTypePolygon = "Polygon";
 pxWidget.constant.geometryTypePoint = "Point";
+pxWidget.constant.msalAccessToken = "msalToken";

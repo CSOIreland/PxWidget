@@ -38,6 +38,9 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/y-takey/c
 // ChartJS chartjs-plugin-colorschemes - https://github.com/nagix/chartjs-plugin-colorschemes
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/nagix/chartjs-plugin-colorschemes@v0.4.0/dist/chartjs-plugin-colorschemes.min.js');
 
+// ChartJS chartjs-plugin-annotation.js - https://github.com/chartjs/chartjs-plugin-annotation
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/chartjs/chartjs-plugin-annotation@v0.5.7/chartjs-plugin-annotation.min.js');
+
 // Leaflet - https://github.com/Leaflet/Leaflet
 pxWidget.noConflict.L = window.L ? window.L : null;
 pxWidget.load(window, document, 'script', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
@@ -73,6 +76,10 @@ pxWidget.load(window, document, 'link', pxWidget.root + (pxWidget.debug ? 'css/i
 
 // PapaParse CSV - https://github.com/mholt/PapaParse/ 
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/mholt/PapaParse@5.1.0/papaparse.min.js');
+
+//JS-Cookie - https://github.com/js-cookie/js-cookie 
+pxWidget.noConflict.Cookies = window.Cookies ? window.Cookies : null;
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js');
 
 // pxWidget JS
 pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/noconflict.js' : 'js/noconflict.min.js'));
