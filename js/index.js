@@ -43,11 +43,11 @@ pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/chartjs/c
 
 // Leaflet - https://github.com/Leaflet/Leaflet
 pxWidget.noConflict.L = window.L ? window.L : null;
-pxWidget.load(window, document, 'script', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js');
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/Esri/esri-leaflet@v3.0.3/dist/esri-leaflet.min.js');
 
 // Leaflet CSS
-pxWidget.load(window, document, 'link', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+pxWidget.load(window, document, 'link', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css');
 
 //Leaflet Choropleth - https://github.com/timwis/leaflet-choropleth
 pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/gh/CSOIreland/leaflet-choropleth@v1.1.4b2/dist/choropleth.js');
@@ -65,7 +65,7 @@ pxWidget.load(window, document, 'script', pxWidget.root + (pxWidget.debug ? 'js/
 
 //Turf js - https://turfjs.org/
 pxWidget.noConflict.turf = window.turf ? window.turf : null;
-pxWidget.load(window, document, 'script', 'https://unpkg.com/@turf/turf@6.3.0/turf.min.js');
+pxWidget.load(window, document, 'script', 'https://cdn.jsdelivr.net/npm/@turf/turf@6.3.0/turf.min.js');
 
 // JSON-Stat - https://github.com/badosa/JSON-stat/
 pxWidget.noConflict.JSONstat = window.JSONstat ? window.JSONstat : null;
