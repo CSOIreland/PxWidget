@@ -4,6 +4,7 @@ PxWidget - Chart - Library
 // Init
 var pxWidget = pxWidget || {};
 pxWidget.map = {};
+pxWidget.map.mapInstance = {};
 pxWidget.map.easyPrint = {};
 pxWidget.map.metadata = {};
 pxWidget.map.ajax = {};
@@ -106,7 +107,8 @@ The parent outer function must be async
                 layer.bindPopup(
                     tooltipTitle +
                     feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
-                    value + '</b> (' + feature.properties.unit + ')');
+                    value + '</b> (' + feature.properties.unit + ')' +
+                    (pxWidget.draw.params[id].popupCallback ? "<br><button class='pxwidget-popup-action-btn " + pxWidget.draw.params[id].popupCallback.buttonClass + "' style='cursor:pointer;'>" + pxWidget.draw.params[id].popupCallback.buttonText + "</button>" : ""));
 
                 layer.on('mouseover', function (e) {
                     if (e.sourceTarget.feature.properties.value != null) {
@@ -130,14 +132,84 @@ The parent outer function must be async
                         "weight": pxWidget.draw.params[id].borders ? borderWeight : 0
                     });
 
-                    var popupAnchor = {
-                        lat: e.latlng.lat,
-                        lng: e.latlng.lng
+                });
+
+                // Attach the click listener when the popup opens
+                layer.on('popupopen', function (e) {
+                    if (!pxWidget.draw.params[id].popupCallback) {
+                        return; //backward compatibility
+                    }
+                    else {
+                        // Resolve the namespaced string (e.g., "App.Utils.myFunc")
+                        var callbackString = pxWidget.draw.params[id].popupCallback.function; // The namespaced string
+                        var fn = callbackString.split('.').reduce(function (obj, prop) {
+                            return obj && obj[prop];
+                        }, window);
+
+                        if (typeof fn === "function") {
+                            var container = e.popup.getElement();
+                            var btn = container.querySelector('.pxwidget-popup-action-btn');
+
+                            if (btn) {
+                                btn.onclick = function () {
+                                    debugger
+                                    // Pass the entire feature object to the resolved function
+                                    fn(feature, pxWidget.draw.params[id].popupCallback.params);
+                                };
+                            }
+                        } else {
+                            console.warn("Callback function '" + callbackString + "' not found.");
+                        }
                     }
 
-                    this.closePopup(popupAnchor);
-
                 });
+
+                /* // 1. Build the Popup HTML
+                var popupContent = "<div>" +
+                    "<b>" + feature.properties.name + "</b><br>" +
+                    "Value: " + value + "<br><br>" +
+                    "<button class='popup-action-btn' style='cursor:pointer;'>Execute Action</button>" +
+                    "</div>";
+
+                layer.bindPopup(popupContent);
+
+                // 2. Attach the click listener when the popup opens
+                layer.on('popupopen', function (e) {
+                    // Resolve the namespaced string (e.g., "App.Utils.myFunc")
+                    var callbackString = pxWidget.draw.params[id].callback; // The namespaced string
+                    var callbackString = "app.healthprofiles.popupCallback"; // The namespaced string
+
+                    var fn = callbackString.split('.').reduce(function (obj, prop) {
+                        return obj && obj[prop];
+                    }, window);
+
+                    if (typeof fn === "function") {
+                        var container = e.popup.getElement();
+                        var btn = container.querySelector('.popup-action-btn');
+
+                        if (btn) {
+                            btn.onclick = function () {
+                                // Pass the entire feature object to the resolved function
+                                fn(feature);
+                            };
+                        }
+                    } else {
+                        console.warn("Callback function '" + callbackString + "' not found.");
+                    }
+                });
+
+                // 3. Hover Interaction
+                layer.on('mouseover', function (e) {
+                    this.setStyle({ weight: 3 });
+                    this.openPopup();
+                });
+
+                layer.on('mouseout', function (e) {
+                    this.setStyle({
+                        weight: pxWidget.draw.params[id].borders ? borderWeight : 0
+                    });
+                    // CRITICAL: We do NOT close the popup here so the user can interact with the button
+                }); */
             }
         }
 
@@ -261,7 +333,8 @@ The parent outer function must be async
     if (pointLayer) {
         layers.push(pointLayer)
     }
-    var map = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
+
+    pxWidget.map.mapInstance[id] = pxWidget.L.map("pxwidget-canvas-wrapper-" + id, {
         zoomSnap: 0.1,
         zoomDelta: 0.5,
         attributionControl: false,
@@ -282,16 +355,16 @@ The parent outer function must be async
 
     //only show markers for points at zoomed in level
     if (geometryType == pxWidget.constant.geometryTypePoint) {
-        map.on("zoomend", function () {
-            var zoomlevel = map.getZoom();
+        pxWidget.map.mapInstance[id].on("zoomend", function () {
+            var zoomlevel = pxWidget.map.mapInstance[id].getZoom();
             if (zoomlevel < 10) {
-                if (map.hasLayer(markerLayer)) {
-                    map.removeLayer(markerLayer);
+                if (pxWidget.map.mapInstance[id].hasLayer(markerLayer)) {
+                    pxWidget.map.mapInstance[id].removeLayer(markerLayer);
                 }
             }
             if (zoomlevel >= 10) {
-                if (!map.hasLayer(markerLayer)) {
-                    map.addLayer(markerLayer);
+                if (!pxWidget.map.mapInstance[id].hasLayer(markerLayer)) {
+                    pxWidget.map.mapInstance[id].addLayer(markerLayer);
                 }
             }
         });
@@ -311,40 +384,40 @@ The parent outer function must be async
     );
 
     attribution.addAttribution(localAttribution);
-    attribution.addTo(map);
+    attribution.addTo(pxWidget.map.mapInstance[id]);
 
     //add baselayers
     //if leaflet baselayers passed in snippet use these only, otherwise use the default 
     if (pxWidget.draw.params[id].baseMap.leaflet.length) {
         pxWidget.jQuery.each(pxWidget.draw.params[id].baseMap.leaflet, function (index, value) {
-            pxWidget.L.tileLayer(value.url, value.options).addTo(map);
+            pxWidget.L.tileLayer(value.url, value.options).addTo(pxWidget.map.mapInstance[id]);
         });
     }
     else {
         pxWidget.jQuery.each(pxWidget.config.map.baseMap.leaflet, function (index, value) {
-            pxWidget.L.tileLayer(value.url, value.options).addTo(map);
+            pxWidget.L.tileLayer(value.url, value.options).addTo(pxWidget.map.mapInstance[id]);
         });
     }
 
     //if optional esri baselayers are passed in snippet, layer these over leaflet baselayers
     if (pxWidget.draw.params[id].baseMap.esri.length) {
         pxWidget.jQuery.each(pxWidget.draw.params[id].baseMap.esri, function (index, value) {
-            pxWidget.L.esri.tiledMapLayer(value).addTo(map);
+            pxWidget.L.esri.tiledMapLayer(value).addTo(pxWidget.map.mapInstance[id]);
         });
     }
 
     var allFeatures = pxWidget.L.geoJson(pxWidget.map.geojson[id]);
-    map.fitBounds(allFeatures.getBounds());
-    map.setMinZoom(map.getZoom());
+    pxWidget.map.mapInstance[id].fitBounds(allFeatures.getBounds());
+    pxWidget.map.mapInstance[id].setMinZoom(pxWidget.map.mapInstance[id].getZoom());
 
     pxWidget.map.easyPrint = pxWidget.L.easyPrint({
         hideControlContainer: false,
         filename: pxWidget.draw.params[id].data.datasets[0].api.response.extension.matrix + "_" + pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'),
         exportOnly: true,
         title: pxWidget.draw.params[id].easyPrint ? pxWidget.draw.params[id].easyPrint.title : "Download"
-    }).addTo(map);
+    }).addTo(pxWidget.map.mapInstance[id]);
 
-    map.on('mouseout', function (e) {
+    pxWidget.map.mapInstance[id].on('mouseout', function (e) {
         this.closePopup();
     });
 
@@ -436,7 +509,7 @@ The parent outer function must be async
                 div.innerHTML = labels.join('<br>');
                 return div;
             }
-            legend.addTo(map);
+            legend.addTo(pxWidget.map.mapInstance[id]);
         }
 
 
