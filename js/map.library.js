@@ -149,13 +149,11 @@ The parent outer function must be async
                         if (typeof fn === "function") {
                             var container = e.popup.getElement();
                             var btn = container.querySelector('.pxwidget-popup-action-btn');
-
                             if (btn) {
-                                btn.onclick = function () {
-                                    debugger
-                                    // Pass the entire feature object to the resolved function
+                                L.DomEvent.on(btn, 'click', function (ev) {
+                                    L.DomEvent.stopPropagation(ev);
                                     fn(feature, pxWidget.draw.params[id].popupCallback.params);
-                                };
+                                });
                             }
                         } else {
                             console.warn("Callback function '" + callbackString + "' not found.");
@@ -163,53 +161,6 @@ The parent outer function must be async
                     }
 
                 });
-
-                /* // 1. Build the Popup HTML
-                var popupContent = "<div>" +
-                    "<b>" + feature.properties.name + "</b><br>" +
-                    "Value: " + value + "<br><br>" +
-                    "<button class='popup-action-btn' style='cursor:pointer;'>Execute Action</button>" +
-                    "</div>";
-
-                layer.bindPopup(popupContent);
-
-                // 2. Attach the click listener when the popup opens
-                layer.on('popupopen', function (e) {
-                    // Resolve the namespaced string (e.g., "App.Utils.myFunc")
-                    var callbackString = pxWidget.draw.params[id].callback; // The namespaced string
-                    var callbackString = "app.healthprofiles.popupCallback"; // The namespaced string
-
-                    var fn = callbackString.split('.').reduce(function (obj, prop) {
-                        return obj && obj[prop];
-                    }, window);
-
-                    if (typeof fn === "function") {
-                        var container = e.popup.getElement();
-                        var btn = container.querySelector('.popup-action-btn');
-
-                        if (btn) {
-                            btn.onclick = function () {
-                                // Pass the entire feature object to the resolved function
-                                fn(feature);
-                            };
-                        }
-                    } else {
-                        console.warn("Callback function '" + callbackString + "' not found.");
-                    }
-                });
-
-                // 3. Hover Interaction
-                layer.on('mouseover', function (e) {
-                    this.setStyle({ weight: 3 });
-                    this.openPopup();
-                });
-
-                layer.on('mouseout', function (e) {
-                    this.setStyle({
-                        weight: pxWidget.draw.params[id].borders ? borderWeight : 0
-                    });
-                    // CRITICAL: We do NOT close the popup here so the user can interact with the button
-                }); */
             }
         }
 
