@@ -108,7 +108,8 @@ The parent outer function must be async
                     tooltipTitle +
                     feature.properties.name + " (" + feature.properties.time + ")" + ' : <b>' +
                     value + '</b> (' + feature.properties.unit + ')' +
-                    (pxWidget.draw.params[id].popupCallback ? "<br><button class='pxwidget-popup-action-btn " + pxWidget.draw.params[id].popupCallback.buttonClass + "' style='cursor:pointer;'>" + pxWidget.draw.params[id].popupCallback.buttonText + "</button>" : ""));
+                    (pxWidget.draw.params[id].popupCallback ? "<br><button data-feature='" + JSON.stringify(feature) + "' data-callback='" + pxWidget.draw.params[id].popupCallback.function + "' data-params='" + pxWidget.draw.params[id].popupCallback.params + "' class='pxwidget-popup-action-btn " + pxWidget.draw.params[id].popupCallback.buttonClass + "' style='cursor:pointer;'>" + pxWidget.draw.params[id].popupCallback.buttonText + "</button>" : "")
+                );
 
                 layer.on('mouseover', function (e) {
                     if (e.sourceTarget.feature.properties.value != null) {
@@ -134,33 +135,6 @@ The parent outer function must be async
 
                 });
 
-                // Attach the click listener when the popup opens
-                layer.on('popupopen', function (e) {
-                    if (!pxWidget.draw.params[id].popupCallback) {
-                        return; //backward compatibility
-                    }
-                    else {
-                        // Resolve the namespaced string (e.g., "App.Utils.myFunc")
-                        var callbackString = pxWidget.draw.params[id].popupCallback.function; // The namespaced string
-                        var fn = callbackString.split('.').reduce(function (obj, prop) {
-                            return obj && obj[prop];
-                        }, window);
-
-                        if (typeof fn === "function") {
-                            var container = e.popup.getElement();
-                            var btn = container.querySelector('.pxwidget-popup-action-btn');
-                            if (btn) {
-                                L.DomEvent.on(btn, 'click', function (ev) {
-                                    L.DomEvent.stopPropagation(ev);
-                                    fn(feature, pxWidget.draw.params[id].popupCallback.params);
-                                });
-                            }
-                        } else {
-                            console.warn("Callback function '" + callbackString + "' not found.");
-                        }
-                    }
-
-                });
             }
         }
 
@@ -471,6 +445,47 @@ The parent outer function must be async
     if (pxWidget.draw.callback[id]) {
         pxWidget.draw.callback[id]();
     }
+
+    // Ensure the popup button click listener is only registered once. 
+    // Without this guard, the listener would be added every time the map 
+    // or widget re-renders, causing multiple callbacks to fire per click, 
+    // duplicated AJAX calls, and spinner state becoming inconsistent.
+    if (!window.pxwidgetPopupListenerAdded) {
+        window.pxwidgetPopupListenerAdded = true;
+
+        //listener for popup button clicks, use event delegation as buttons are dynamically generated with popup content
+        document.addEventListener("click", function (ev) {
+
+            var btn = ev.target.closest(".pxwidget-popup-action-btn");
+            if (!btn) return;
+
+            // Stop the click from reaching the map, but not the whole document 
+            ev.stopPropagation();
+
+            // Extract callback info
+            var callbackString = btn.getAttribute("data-callback");
+
+            // Resolve namespaced callback
+            var fn = callbackString
+                ? callbackString.split(".").reduce((obj, prop) => obj && obj[prop], window)
+                : null;
+
+            var feature = btn.getAttribute("data-feature") ? JSON.parse(btn.getAttribute("data-feature")) : {};
+            var params = btn.getAttribute("data-params") || {};
+
+            if (typeof fn === "function") {
+                //run the callback function, pass feature and params from button data attributes
+                fn(feature, params);
+
+            } else {
+                console.warn(`Callback function '${callbackString}' not found.`);
+            }
+        });
+    }
+
+
+
+
 };
 
 pxWidget.map.ajax.readDataset = function (id) {
