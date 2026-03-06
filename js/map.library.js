@@ -92,6 +92,7 @@ The parent outer function must be async
                 fillOpacity: 0.6
             },
             onEachFeature: function (feature, layer) {
+                let hoverTimeout = null;
                 coloursUsed.push(layer.options.fillColor);
                 var decimal = feature.properties.statistic ? pxWidget.map.jsonstat[id].Dimension({ role: "metric" })[0].Category(feature.properties.statistic).unit.decimals : null;
                 var value = null;
@@ -124,10 +125,14 @@ The parent outer function must be async
                     layer.setStyle({
                         "weight": 2
                     })
-                    this.openPopup(popupAnchor);
+
+                    hoverTimeout = setTimeout(() => {// delay opening popup to prevent it from flashing when user is just moving mouse across the map
+                        this.openPopup(popupAnchor);
+                    }, 250);
 
                 });
                 layer.on('mouseout', function (e) {
+                    clearTimeout(hoverTimeout);//clear timeout if user moves mouse out before popup opens to prevent flashing popup
                     pxWidget.jQuery('#' + id + ' span[data-colour="' + e.sourceTarget.options.fillColor + '"').css("font-weight", "normal");
                     layer.setStyle({
                         "weight": pxWidget.draw.params[id].borders ? borderWeight : 0
