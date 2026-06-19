@@ -234,6 +234,272 @@ pxWidget.table_v2.pivotData = function (data, id) {
 };
 
 /**
+ * Pivot the CSv based on rowFields and ColumnFields
+ * @param {*} data 
+ * @param {*} id 
+ */
+pxWidget.table_v2.pivotDataCsv = function (id) {
+    var data = pxWidget.draw.params[id].data;
+    var pivotMap = new Map();
+    var rowValues = new Set();
+    var columnValues = new Set();
+
+    // Create pivot map
+    for (let i = 0; i < data.length; i++) {
+        var row = data[i];
+        // Create a unique key for each row combination
+        var rowKey = pxWidget.draw.params[id].rowFields.map(field => String(row[field] || '')).join(pxWidget.constant.separator);
+        // Create a unique key for each column combination
+        var columnKey = pxWidget.draw.params[id].columnFields.map(field => String(row[field] || '')).join(pxWidget.constant.separator);
+        // Get the value from the actual value field
+        var value = row[pxWidget.constant.valueField];
+
+        // Add the row and column keys to their respective sets
+        rowValues.add(rowKey);
+        columnValues.add(columnKey);
+
+        // If this row key doesn't exist in the pivot map, create a new map for it
+        if (!pivotMap.has(rowKey)) {
+            pivotMap.set(rowKey, new Map());
+        }
+        // Set the value in the pivot map, using row and column keys
+        pivotMap.get(rowKey).set(columnKey, value);
+    }
+
+    // Sort column values for grouping
+    var sortedColumnValues = Array.from(columnValues).sort();
+
+    // Create pivoted data array
+    var pivotedData = [
+        [...pxWidget.draw.params[id].rowFields, ...sortedColumnValues]
+    ];
+
+    // Iterate over each row value
+    rowValues.forEach(rowValue => {
+        // Split the row key back into its component parts
+        var rowData = rowValue.split(pxWidget.constant.separator);
+        // Start building a new row for the pivoted table with the row data
+        var newRow = [...rowData];
+
+        // Iterate over each sorted column value
+        sortedColumnValues.forEach(columnValue => {
+            // Retrieve the value from the pivot map using the row and column keys
+            // If the value is not found, use an empty string as a default
+            newRow.push(pivotMap.get(rowValue)?.get(columnValue) || '');
+        });
+        // Add the newly varructed row to the pivoted data array
+        pivotedData.push(newRow);
+    });
+
+    var pivotedResult = {
+        data: pivotedData,
+        rowFieldsCount: pxWidget.draw.params[id].rowFields.length,
+        columnFieldsCount: pxWidget.draw.params[id].columnFields.length
+    };
+
+    pxWidget.table_v2.renderPivotedTableCsv(pivotedResult, id)
+
+};
+
+/**
+ * Draw the pivoted HTML table with complex headers
+ * @param {*} pivotedResult 
+ * @param {*} id 
+ */
+pxWidget.table_v2.renderPivotedTableCsv = function (pivotedResult, id) {
+    // Destructure the input object to get necessary data
+    var { data, rowFieldsCount, columnFieldsCount } = pivotedResult;
+
+    pxWidget.table_v2.loadCSS(id);
+
+    if (pxWidget.jQuery.fn.DataTable.isDataTable('#' + id + " table")) {
+        pxWidget.jQuery('#' + id + " table").DataTable().destroy();
+        //cannot use redraw as columns are dynamically created depending on the matrix. Have to destroy and re-initiate
+    }
+
+    // Set the Bootstrap table for Datatable if Bootstrap is found
+
+    if (window.jQuery && window.jQuery.fn.modal) {
+        // Clear the container and create a new table element
+        pxWidget.jQuery('#' + id).empty().html(pxWidget.jQuery('<table>', {
+            id: 'pivotTable' + id,
+            class: 'custom-table table table-striped table-bordered hover',
+            style: 'width: 100%'
+        }).get(0).outerHTML);
+    }
+    else {
+        pxWidget.jQuery('#' + id).empty().html(pxWidget.jQuery('<table>', {
+            id: 'pivotTable' + id,
+            class: 'custom-table display',
+            style: 'width: 100%'
+        }).get(0).outerHTML);
+    }
+
+    // Get references to the table and create thead and tbody elements
+    let $table = pxWidget.jQuery('#pivotTable' + id);
+    let $thead = pxWidget.jQuery('<thead>').appendTo($table);
+    let $tbody = pxWidget.jQuery('<tbody>').appendTo($table);
+    if (pxWidget.draw.params[id].title) {
+        pxWidget.jQuery('<caption>', {
+            text: pxWidget.draw.params[id].title.trim()
+        }).appendTo($table);
+    }
+
+    var csvDownloadData = [];
+    //create csvDownloadHeaderRow
+    var csvHeaderRow = [];
+    pxWidget.jQuery.each(data[0], function (index, value) {
+        if (index < rowFieldsCount) {
+            csvHeaderRow.push(value);
+        }
+        else {
+            var header = "";
+            pxWidget.jQuery.each(value.split(pxWidget.constant.separator), function (i, v) {
+                var headerComponent;
+                header += v
+                    + (i != value.split("|").length - 1 ? "|" : "");
+            });
+            csvHeaderRow.push(header);
+        }
+    })
+
+    csvDownloadData.push(csvHeaderRow);
+
+    // Create table header with colspan
+    for (let i = 0; i < columnFieldsCount; i++) {
+        // Create a new header row for each level of column fields
+        let $headerRow = pxWidget.jQuery('<tr>').appendTo($thead);
+        let colspan = 1;
+        let lastHeader = '';
+
+        // Add row field headers (only on the first iteration)
+        if (i === 0) {
+            for (let j = 0; j < rowFieldsCount; j++) {
+                // Create header cell for each row field, spanning all column field rows
+                pxWidget.jQuery('<th>')
+                    .attr('rowspan', columnFieldsCount)
+                    .attr('style', "text-align: center;vertical-align: bottom;")
+                    .addClass('pivot-header')
+                    .text(data[0][j])
+                    .appendTo($headerRow);
+            }
+        }
+
+        // Add column field headers
+        for (let j = rowFieldsCount; j < data[0].length; j++) {
+            // Split the header text to get the current level's value
+            var headerParts = data[0][j].split(pxWidget.constant.separator);
+            if (headerParts[i] === lastHeader) {
+                // If it's the same as the last header, increase the colspan
+                colspan++;
+            } else {
+                if (lastHeader !== '') {
+                    // If there was a previous header, add it to the row
+                    pxWidget.jQuery('<th>')
+                        .attr('colspan', colspan)
+                        .attr('style', "text-align: center;vertical-align: bottom;")
+                        .addClass('pivot-header')
+                        .text(lastHeader)
+                        .appendTo($headerRow);
+                }
+                // Reset for the new header
+                lastHeader = headerParts[i];
+                colspan = 1;
+            }
+        }
+        // Add the last header of the row
+        if (lastHeader !== '') {
+            pxWidget.jQuery('<th>')
+                .attr('colspan', colspan)
+                .attr('style', "text-align: center;vertical-align: bottom;")
+                .addClass('pivot-header')
+                .text(lastHeader)
+                .appendTo($headerRow);
+        }
+    }
+
+    //check if we have highlighted dimension row in rowFields and get position
+    var highlightedDimensionPosition = pxWidget.draw.params[id].rowFields.indexOf(pxWidget.draw.params[id].highlightRow.dimension);
+    // Create table body
+    data.slice(1).forEach(row => {
+        var csvDataRow = [];
+
+        var highlighted = false;
+        if (highlightedDimensionPosition >= 0) {
+            if (pxWidget.draw.params[id].highlightRow.variable.indexOf(row[highlightedDimensionPosition]) >= 0) {
+                highlighted = true;
+            }
+        }
+
+        // Create a new row for each data entry
+        let $dataRow = pxWidget.jQuery('<tr>', {
+            style: highlighted ? "font-weight: bold" : "",
+            class: highlighted ? "widget-table-highlighted-row" : ""
+        }).appendTo($tbody);
+        row.forEach((cell, index) => {
+            if (index <= pxWidget.draw.params[id].rowFields.length - 1) {
+                //row fields
+                // Add each cell to the row, right align values only
+                pxWidget.jQuery('<td>', {
+                }).html(cell).appendTo($dataRow);
+                csvDataRow.push(cell);
+
+            }
+            else {
+                var valueField = null;
+                if (cell[pxWidget.constant.valueField] == pxWidget.draw.params[id].defaultContent) {
+                    valueField = pxWidget.draw.params[id].defaultContent;
+                }
+                else if (cell[pxWidget.constant.valueField].length) {
+                    //column fields
+                    valueField = cell[pxWidget.constant.decimalField] ? pxWidget.formatNumber(cell[pxWidget.constant.valueField], cell[pxWidget.constant.decimalField]) : cell[pxWidget.constant.valueField];
+                }
+                else {
+                    valueField = pxWidget.draw.params[id].defaultContent;
+                }
+                //right align values only
+                pxWidget.jQuery('<td>', {
+                    "style": "text-align: right;"
+                }).text(
+                    valueField
+                ).appendTo($dataRow);
+                csvDataRow.push(valueField);
+            }
+
+        });
+
+        csvDownloadData.push(csvDataRow);
+    });
+    var pivotTableOptions = pxWidget.jQuery.extend(true, {}, pxWidget.draw.params[id].options);
+    pivotTableOptions.columnDefs = [];
+
+    pivotTableOptions.buttons = [
+        {
+            text: 'Download CSV',
+            action: function (e, dt) {
+                pxWidget.table_v2.downloadCsv(csvDownloadData, pxWidget.moment(Date.now()).format('DDMMYYYYHHmmss'));
+
+            }
+        }
+    ];
+
+    //get the index of the value columns to define type for natural sorting
+    var valueColumnIndex = [];
+    pxWidget.jQuery.each(data[0], function (index, value) {
+        if (index >= pxWidget.draw.params[id].rowFields.length) {
+            valueColumnIndex.push(index)
+        }
+    });
+    pivotTableOptions.columnDefs.push({
+        targets: valueColumnIndex,
+        type: "data"
+    });
+
+    pxWidget.table_v2.runDataTable(id, pivotTableOptions);
+
+};
+
+/**
  * Draw the pivoted HTML table with complex headers
  * @param {*} pivotedResult 
  * @param {*} id 
@@ -646,21 +912,44 @@ pxWidget.table_v2.runDataTable = function (id, options) {
 
     var footerElements = [];
 
-    if (pxWidget.table_v2.jsonStat[id].updated) {
-        var dateUpdated = pxWidget.moment(pxWidget.table_v2.jsonStat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(pxWidget.table_v2.jsonStat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
-        footerElements.push(dateUpdated);
+    if (pxWidget.table_v2.jsonStat[id]) {
+        if (pxWidget.table_v2.jsonStat[id].updated) {
+            var dateUpdated = pxWidget.moment(pxWidget.table_v2.jsonStat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('MMMM DD, YYYY') + " " + pxWidget.moment(pxWidget.table_v2.jsonStat[id].updated, 'YYYY-MM-DDTHH:mm:ss').format('HH:mm:ss') + " UTC";
+            footerElements.push(dateUpdated);
+        }
     }
 
     if (pxWidget.draw.params[id].copyright) {
-        footerElements.push('&copy; ' + pxWidget.table_v2.jsonStat[id].extension.copyright.name);
+        if (pxWidget.table_v2.jsonStat[id]) {
+            footerElements.push('&copy; ' + pxWidget.table_v2.jsonStat[id].extension.copyright.name);
+        }
+        if (pxWidget.draw.params[id].copyrightText) {//from csv to table config
+            footerElements.push('&copy; ' + pxWidget.draw.params[id].copyrightText);
+        }
     }
 
     if (pxWidget.draw.params[id].link) {
-        footerElements.push(pxWidget.jQuery('<a>', {
-            "text": pxWidget.draw.params[id].link,
-            "href": pxWidget.draw.params[id].link,
-            "target": "_blank"
-        }).get(0).outerHTML);
+
+        if (Array.isArray(pxWidget.draw.params[id].link)) {
+            // array of links from csv to table
+            pxWidget.jQuery.each(pxWidget.draw.params[id].link, function (index, value) {
+                footerElements.push(pxWidget.jQuery('<a>', {
+                    "text": value,
+                    "href": value,
+                    "target": "_blank"
+                }).get(0).outerHTML);
+            });
+        } else {
+            //link from metadata
+            footerElements.push(pxWidget.jQuery('<a>', {
+                "text": pxWidget.draw.params[id].link,
+                "href": pxWidget.draw.params[id].link,
+                "target": "_blank"
+            }).get(0).outerHTML);
+        }
+
+
+
     }
 
     if (footerElements.length) {

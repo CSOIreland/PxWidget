@@ -11,6 +11,7 @@ pxWidget.draw.type = {};
 pxWidget.draw.type.chart = 'chart';
 pxWidget.draw.type.table = 'table';
 pxWidget.draw.type.tablev2 = 'table_v2';
+pxWidget.draw.type.tableCsv = 'table_csv';
 pxWidget.draw.type.map = 'map';
 
 /**
@@ -58,6 +59,10 @@ pxWidget.draw.init = function (type, id, params, callback) {
     case pxWidget.draw.type.tablev2:
       pxWidget.jQuery('#' + id).addClass("table");
       pxWidget.table_v2.draw(id);
+      break;
+    case pxWidget.draw.type.tableCsv:
+      pxWidget.jQuery('#' + id).addClass("table");
+      pxWidget.table_v2.pivotDataCsv(id);
       break;
     case pxWidget.draw.type.map:
       pxWidget.jQuery('#' + id).addClass("map");
