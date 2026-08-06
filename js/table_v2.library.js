@@ -239,7 +239,25 @@ pxWidget.table_v2.pivotData = function (data, id) {
  * @param {*} id 
  */
 pxWidget.table_v2.pivotDataCsv = function (id) {
-    var data = pxWidget.draw.params[id].data;
+    var data = pxWidget.jQuery.extend(true, [], pxWidget.draw.params[id].data);
+
+    //add sort prefix to column fields so that we can maintain the order of the classification in the pivot table. 
+    //This is needed because the column fields are sorted alphabetically and we need to maintain the order of the classification as defined in the CSV
+    //we will hide the prefix in the header of the pivot table
+    pxWidget.jQuery.each(pxWidget.draw.params[id].columnFields, function (i, field) {
+        var columnFieldPrefixes = {};
+        var counter = 1;
+        $.each(data, function (index, item) {
+            // Assign prefix if it hasn't been seen yet
+            if (!columnFieldPrefixes[item[field]]) {
+                columnFieldPrefixes[item[field]] = "{" + String(counter).padStart(2, '0') + "}";
+                counter++;
+            }
+            // Prepend prefix to property
+            item[field] = columnFieldPrefixes[item[field]] + item[field];
+        });
+    });
+
     var pivotMap = new Map();
     var rowValues = new Set();
     var columnValues = new Set();
@@ -264,7 +282,7 @@ pxWidget.table_v2.pivotDataCsv = function (id) {
         }
         // Set the value in the pivot map, using row and column keys
         pivotMap.get(rowKey).set(columnKey, value);
-    }
+    };
 
     // Sort column values for grouping
     var sortedColumnValues = Array.from(columnValues).sort();
@@ -349,6 +367,7 @@ pxWidget.table_v2.renderPivotedTableCsv = function (pivotedResult, id) {
     //create csvDownloadHeaderRow
     var csvHeaderRow = [];
     pxWidget.jQuery.each(data[0], function (index, value) {
+        value = value.replace(/\{\d+\}\s*/g, ''); // Remove the sort prefix from the header text with global flag to remove all occurrences
         if (index < rowFieldsCount) {
             csvHeaderRow.push(value);
         }
@@ -399,7 +418,7 @@ pxWidget.table_v2.renderPivotedTableCsv = function (pivotedResult, id) {
                         .attr('colspan', colspan)
                         .attr('style', "text-align: center;vertical-align: bottom;")
                         .addClass('pivot-header')
-                        .text(lastHeader)
+                        .text(lastHeader.replace(/^\{\d+\}\s*/, '')) // Remove the sort prefix from the header text
                         .appendTo($headerRow);
                 }
                 // Reset for the new header
@@ -413,7 +432,7 @@ pxWidget.table_v2.renderPivotedTableCsv = function (pivotedResult, id) {
                 .attr('colspan', colspan)
                 .attr('style', "text-align: center;vertical-align: bottom;")
                 .addClass('pivot-header')
-                .text(lastHeader)
+                .text(lastHeader.replace(/^\{\d+\}\s*/, '')) // Remove the sort prefix from the header text
                 .appendTo($headerRow);
         }
     }
