@@ -247,7 +247,7 @@ pxWidget.table_v2.pivotDataCsv = function (id) {
     pxWidget.jQuery.each(pxWidget.draw.params[id].columnFields, function (i, field) {
         var columnFieldPrefixes = {};
         var counter = 1;
-        $.each(data, function (index, item) {
+        pxWidget.jQuery.each(data, function (index, item) {
             // Assign prefix if it hasn't been seen yet
             if (!columnFieldPrefixes[item[field]]) {
                 columnFieldPrefixes[item[field]] = "{" + String(counter).padStart(2, '0') + "}";
